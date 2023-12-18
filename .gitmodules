@@ -1,0 +1,3 @@
+[submodule "OmniIsaacGym"]
+	path = OmniIsaacGym
+	url = https://github.com/NVIDIA-Omniverse/OmniIsaacGymEnvs
