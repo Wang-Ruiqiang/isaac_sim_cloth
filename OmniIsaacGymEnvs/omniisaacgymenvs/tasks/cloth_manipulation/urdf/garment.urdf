@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<robot name="garment">
+    <link name="garment">
+        <visual>
+            <geometry>
+                <mesh filename="../mesh/garment.obj"/>
+            </geometry>
+        </visual>
+        <collision>
+            <geometry>
+                <mesh filename="../mesh/garment.obj"/>
+            </geometry>
+            <sdf resolution="256"/>
+        </collision>
+    </link>
+</robot>

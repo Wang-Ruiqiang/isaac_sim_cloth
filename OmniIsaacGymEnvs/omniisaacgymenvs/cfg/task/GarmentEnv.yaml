@@ -1,0 +1,20 @@
+# See schema in factory_schema_config_env.py for descriptions of common parameters.
+
+
+defaults:
+  - _self_
+  - /factory_schema_config_env
+
+
+sim:
+  disable_franka_collisions: False
+  disable_garment_collisions: False
+  disable_contact_processing: False
+
+
+env:
+  env_name: 'GarmentEnv'
+  desired_subassemblies: ['rigid', "particle_cloth", cloth]
+  garment_lateral_offset: 0.0  # Y-axis offset of nut before initial reset to prevent initial interpenetration with bolt
+  garment_density: 785.0
+  garment_friction: 0.6
