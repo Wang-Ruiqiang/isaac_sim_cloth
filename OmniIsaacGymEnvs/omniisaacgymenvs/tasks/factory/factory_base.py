@@ -100,15 +100,12 @@ class FactoryBase(RLTask, FactoryABCBase):
             franka_translation = np.array([self.cfg_base.env.franka_depth, 0.0, 0.0])
             franka_orientation = np.array([0.0, 0.0, 0.0, 1.0])
 
-            print("before FactoryFranka===========================================")
             franka = FactoryFranka(
                 prim_path=self.default_zero_env_path + "/franka",
                 name="franka",
                 translation=franka_translation,
                 orientation=franka_orientation,
             )
-
-            print("before apply_articulation_settings===========================================")
             self._sim_config.apply_articulation_settings(
                 "franka",
                 get_prim_at_path(franka.prim_path),
@@ -141,12 +138,11 @@ class FactoryBase(RLTask, FactoryABCBase):
                         rb.GetAngularDampingAttr().Set(0.5)
                         rb.GetMaxAngularVelocityAttr().Set(64 / math.pi * 180)
 
-            print("import table===========================================")
             table_translation = np.array(
                 [0.0, 0.0, self.cfg_base.env.table_height * 0.5]
             )
             table_orientation = np.array([1.0, 0.0, 0.0, 0.0])
-            
+
             table = FixedCuboid(
                 prim_path=self.default_zero_env_path + "/table",
                 name="table",

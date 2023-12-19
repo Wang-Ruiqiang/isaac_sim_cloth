@@ -43,9 +43,8 @@ class FactoryFranka(Robot):
                 carb.log_error("Could not find Isaac Sim assets folder")
             self._usd_path = assets_root_path + "/Isaac/Robots/FactoryFranka/factory_franka.usd"
 
-
         add_reference_to_stage(self._usd_path, prim_path)
-        print("before super().__init__(===========================================")
+
         super().__init__(
             prim_path=prim_path,
             name=name,
@@ -54,7 +53,6 @@ class FactoryFranka(Robot):
             articulation_controller=None,
         )
 
-        print("before dof_paths===========================================")
         dof_paths = [
             "panda_link0/panda_joint1",
             "panda_link1/panda_joint2",
@@ -66,7 +64,7 @@ class FactoryFranka(Robot):
             "panda_hand/panda_finger_joint1",
             "panda_hand/panda_finger_joint2",
         ]
-        
+
         drive_type = ["angular"] * 7 + ["linear"] * 2
         default_dof_pos = [math.degrees(x) for x in [0.0, -1.0, 0.0, -2.2, 0.0, 2.4, 0.8]] + [0.02, 0.02]
         stiffness = [40 * np.pi / 180] * 7 + [500] * 2
@@ -88,4 +86,3 @@ class FactoryFranka(Robot):
             PhysxSchema.PhysxJointAPI(get_prim_at_path(f"{self.prim_path}/{dof}")).CreateMaxJointVelocityAttr().Set(
                 max_velocity[i]
             )
-        

@@ -102,11 +102,9 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self._import_env_assets(add_to_stage=True)
 
         self.frankas = FactoryFrankaView(prim_paths_expr="/World/envs/.*/franka", name="frankas_view")
-        # self.cloth = RigidPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view")
         self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
                                    name="cloth_view",
                                    )
-        # self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view")
 
         scene.add(self.cloth)
         scene.add(self.frankas)
@@ -198,11 +196,11 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         cloth_noise_xy = cloth_noise_xy @ torch.diag(
             torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
         
-        cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[idx][0].item()
-        cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[idx][1].item()
+        # cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[idx][0].item()
+        # cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[idx][1].item()
 
-        # self.cloth_pos[idx, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0]
-        # self.cloth_pos[idx, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1]
+        cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0]
+        cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1]
 
         cloth_z_pos = self.cfg_base.env.table_height
         # garment_position = torch.tensor([cloth_x_pos, cloth_y_pos, cloth_z_pos], device=self._device) 
@@ -222,19 +220,10 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         physicsUtils.setup_transform_as_scale_orient_translate(plane_mesh)
         physicsUtils.set_or_add_translate_op(plane_mesh, init_loc)
         physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat())
-        # self.plane_meshs.append(plane_mesh)
-        # self.cloth_paths.append(cloth_path)
+        self.plane_meshs.append(plane_mesh)
+        self.cloth_paths.append(cloth_path)
 
-        # particle_system_path = f"/World/envs/env_{i}" + "/garment/garment/ParticleSystem"
-        # particle_material_path = f"/World/envs/env_{i}" + "/garment/garment/ParticleMaterial"
-        # particle_system_path = f"/World/envs/env_{idx}" + "/garment/garment/ParticleSystem"
-        # particle_material_path = f"/World/envs/env_{idx}" + "/garment/garment/ParticleMaterial"
         particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
-        # particle_material_path = env.GetPrim().GetPath().AppendChild("ParticleMaterial")
-
-        # self.particle_material = ParticleMaterial(
-        #     prim_path=particle_material_path, drag=0.1, lift=0.3, friction=0.6
-        # )
         particle_system = ParticleSystem(
             particle_system_enabled = True,
             prim_path=particle_system_path,
@@ -253,19 +242,12 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             prim_path=str(cloth_path),
             name="clothPrim" + str(idx),
             particle_system=particle_system,
-            # particle_material = self.particle_material,
-            # position = garment_position,
             stretch_stiffness=10000.0,
             bend_stiffness=100.0,
             shear_stiffness=100.0,
             spring_damping=0.2,
             particle_mass=0.1,
         )
-        # physicsUtils.add_physics_material_to_prim(
-        #         self._stage, 
-        #         self._stage.GetPrimAtPath(f"/World/envs/env_{idx}" + f"/garment"), 
-        #         self.nutboltPhysicsMaterialPath
-        #     )
 
     def refresh_env_tensors(self):
         """Refresh tensors."""
@@ -274,8 +256,8 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses()
 
         self.cloth_pos -= self.env_pos
-        cloth_velocities = self.cloth.get_velocities(clone=False)
-        self.cloth_particle_vel = cloth_velocities[:, :]
+        # cloth_velocities = self.cloth.get_velocities(clone=False)
+        # self.cloth_particle_vel = cloth_velocities[:, :]
 
         # net contact force is not available yet
         # self.nut_force = ...

@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: omniisaacgymenvs
-Version: 2023.1.0a0
+Version: 2023.1.0b0
 Summary: RL environments for robot learning in NVIDIA Isaac Sim.
 Author: NVIDIA
 Keywords: robotics,rl

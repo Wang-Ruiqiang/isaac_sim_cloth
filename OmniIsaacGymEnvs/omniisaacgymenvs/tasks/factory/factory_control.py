@@ -431,10 +431,6 @@ def translate_along_local_z(pos, quat, offset, device):
     offset_vec = offset * torch.tensor([0.0, 0.0, 1.0], device=device).repeat(
         (num_vecs, 1)
     )
-    # print("num_vecs = ", num_vecs)
-    # print("offset_vec = ", offset_vec)
-    # print("pos = ", pos)
-    # print("quat = ", quat)
     _, translated_pos = torch_utils.tf_combine(
         q1=quat,
         t1=pos,
@@ -442,7 +438,6 @@ def translate_along_local_z(pos, quat, offset, device):
         t2=offset_vec,
     )
 
-    # print("translated_pos = ", translated_pos)
     return translated_pos
 
 

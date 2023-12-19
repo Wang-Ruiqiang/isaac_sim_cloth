@@ -48,7 +48,6 @@ from omniisaacgymenvs.tasks.factory.factory_schema_class_task import FactoryABCT
 from omniisaacgymenvs.tasks.cloth_manipulation.franka_cloth import FrankaCloth
 from omniisaacgymenvs.tasks.factory.factory_schema_config_task import FactorySchemaConfigTask
 import omniisaacgymenvs.tasks.factory.factory_control as fc
-from omni.isaac.robot_assembler import RobotAssembler,AssembledRobot
 
 from omni.isaac.core.simulation_context import SimulationContext
 from omni.physx.scripts import physicsUtils, deformableUtils
@@ -219,57 +218,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
     
     def _reset_object(self, env_ids):
-        # self._env._world.scene.remove_object("cloth_view", False)
-        # self._import_env_assets(True)
-        # self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
-        #                            name="cloth_view",
-        #                            )
-
-        # self._env._world.scene.add(self.cloth)
-        # self.initialize_views_cloth(self._env._world.scene)
-
-        cloth_noise_xy = 2 * (torch.rand((self.num_envs, 2), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
-        cloth_noise_xy = cloth_noise_xy @ torch.diag(
-            torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
-        
-        # self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[env_ids, 0]
-        # self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[env_ids, 1]
-
-        self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0]
-        self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1]
-
-        # self.cloth_pos[env_ids, 2] = self.cfg_base.env.table_height + self.garment_heights.squeeze(-1)
-        self.cloth_pos[env_ids, 2] = self.cfg_base.env.table_height
-
-        # self.cloth_quat[env_ids, :] = torch.tensor([1, 0, 0, 0], dtype=torch.float32, device=self.device).repeat(len(env_ids), 1)
-
-        self.cloth_particle_vel[env_ids, :] = 0.0
-
-        # # 新加
-        indices = env_ids.to(dtype=torch.int32)
-        # self.target_postition, self.target_quat = self.cloth.get_world_poses()
-        # for i in range(self._num_envs):
-        #     # init_loc = Gf.Vec3f(self.cloth_pos[env_ids, 0][i].item(), self.cloth_pos[env_ids, 1][i].item() - 0.1, 0.4)
-
-        #     init_loc = Gf.Vec3f(0, -0.15, 0.4)
-        # #     # print("self.plan_mesh[i] = ", self.plane_meshs[i])
-        # #     # physicsUtils.setup_transform_as_scale_orient_translate(self.plane_meshs[i])
-        # #     # physicsUtils.set_or_add_translate_op(self.plane_meshs[i], init_loc)
-        # #     # physicsUtils.set_or_add_orient_op(self.plane_meshs[i], Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat())
-
-        #     if self.initial_positions is None:
-        #         self.initial_positions = torch.zeros((self.num_envs, len(self.tri_points), 3))
-        #     # indices = torch.tensor(
-        #     #         np.random.choice(range(self.num_envs), self.num_envs // 2, replace=False), dtype=torch.long
-        #     #     )
-        #     # print("torch.tensor(self.plane_meshs[i].GetPointsAttr().Get() = ", self.plane_meshs[i].GetPointsAttr().Get())
-        #     self.initial_positions[i] = torch.tensor(init_loc) + torch.tensor(self.plane_meshs[i].GetPointsAttr().Get())
-        #     # print("self.initial_positions[i] = ", self.initial_positions[i])
-        #     self.cloth.set_world_positions(self.initial_positions[i], indices = [i])
-        #     # print("world_positions = ", self.cloth.get_world_positions(indices = [i]))
-        
-        self.cloth.set_world_poses(self.cloth_pos[env_ids] + self.env_pos[env_ids], self.cloth_quat[env_ids], indices)
-        self.cloth.set_velocities(self.cloth_particle_vel[env_ids], indices)
+        self.initialize_views_cloth(self._env._world.scene)
 
 
     def add_attachment(self):
@@ -283,7 +232,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
 
     def create_panda_chain(self):
-        robot = URDF.from_xml_file("/home/ruiqiang/workspace/omniverse_gym/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
+        # robot = URDF.from_xml_file("/home/ruiqiang/workspace/omniverse_gym/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
+        robot = URDF.from_xml_file("/home/ruiqiang/workspace/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
         tree = kdl_tree_from_urdf_model(robot)
         chain = tree.getChain("panda_link0", "panda_link8")
         return chain
