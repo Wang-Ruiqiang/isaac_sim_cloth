@@ -103,8 +103,6 @@ def parse_hydra_configs(cfg: DictConfig):
         experience=experience
     )
 
-    print("headless = ", headless)
-
     # ensure checkpoints can be specified as relative paths
     if cfg.checkpoint:
         cfg.checkpoint = retrieve_checkpoint_path(cfg.checkpoint)

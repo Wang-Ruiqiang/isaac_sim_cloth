@@ -4,7 +4,7 @@ rigid:
         usd_path: '/home/ruiqiang/workspace/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/mesh/garment1.usd'
         width_min: 0.07  # distance from flat surface to flat surface
         width_max: 0.433759  # distance from edge to edge
-        height: 0.013  # height of nut
+        height: 0.0013  # height of cloth
         flat_length: 0.404145  # length of flat surface
 
 particle_cloth:
@@ -13,7 +13,7 @@ particle_cloth:
         usd_path: '/home/ruiqiang/workspace/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/mesh/garment2.usd'
         width_min: 0.07  # distance from flat surface to flat surface
         width_max: 0.433759  # distance from edge to edge
-        height: 0.013  # height of nut
+        height: 0.0013  # height of cloth
         flat_length: 0.404145  # length of flat surface
 
 cloth:
@@ -22,5 +22,5 @@ cloth:
         usd_path: '/home/ruiqiang/workspace/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/mesh/cloth.usd'
         width_min: 0.07  # distance from flat surface to flat surface
         width_max: 0.433759  # distance from edge to edge
-        height: 0.013  # height of nut
+        height: 0.0013  # height of cloth
         flat_length: 0.404145  # length of flat surface

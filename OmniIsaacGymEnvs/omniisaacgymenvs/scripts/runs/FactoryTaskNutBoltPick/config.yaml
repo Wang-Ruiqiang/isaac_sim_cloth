@@ -119,8 +119,8 @@ task:
     - 0.0
     - -0.1
     cloth_pos_xy_initial_noise:
-    - 0.05
-    - 0.05
+    - 0.0001
+    - 0.0001
   rl:
     pos_action_scale:
     - 0.1

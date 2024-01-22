@@ -127,6 +127,9 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self.identity_quat = torch.tensor([1.0, 0.0, 0.0, 0.0], device=self._device).unsqueeze(0).repeat(self._num_envs, 1)
 
 
+
+        #折叠衣服计算reward的时候的点的数据
+
     def pre_physics_step(self, actions) -> None:
         """Reset environments. Apply actions from policy. Simulation step called after this method."""
 
@@ -171,7 +174,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self._reset_object(env_ids)
         self._reset_franka(env_ids)
 
-        # self.add_attachment()
+        self.add_attachment()
     
         self._randomize_gripper_pose(env_ids, sim_steps=self.cfg_task.env.num_gripper_move_sim_steps)
 
@@ -198,6 +201,31 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         actions[env_ids, 0:3] = torch.tensor([-0.0102, -0.1460, 0.5], device=self.device)
 
         self.target_postition, self.target_quat = self.cloth.get_world_poses()
+        
+        self.cloth_positon = self.cloth.get_world_positions()
+        # print("self.cloth_positon[0, 63] = ", self.cloth_positon[0, 63])
+        # print("self.cloth_positon[0, 63][1] = ", self.cloth_positon[0, 63][1])
+        # print("self.cloth_positon[0, 7] = ", self.cloth_positon[0, 7])
+        # print("self.cloth_positon[0, 7][1] = ", self.cloth_positon[0, 7][1])
+
+        # print("self.cloth_positon[0, 56] = ", self.cloth_positon[0, 56])
+        # print("self.cloth_positon[0, 56][1] = ", self.cloth_positon[0, 56][1])
+        # print("self.cloth_positon[0, 0] = ", self.cloth_positon[0, 0])
+        # print("self.cloth_positon[0, 0][1] = ", self.cloth_positon[0, 0][1])
+
+        # print(f"self.cloth_positon[0, 59] = ", self.cloth_positon[0, 59])
+        # print("self.cloth_positon[0, 59][1] = ", self.cloth_positon[0, 59][1])
+        # print(f"self.cloth_positon[0, 3] = ", self.cloth_positon[0, 3])
+        # print("self.cloth_positon[0, 3][1] = ", self.cloth_positon[0, 3][1])
+
+        # print(f"self.cloth_positon[0] = ", self.cloth_positon[0])
+
+
+
+        # for i in range(self.cloth_positon.size(0)):
+        #     print(f"self.cloth_positon[{i}] = ", self.cloth_positon[i])
+
+
         self.target_postition -= self.env_pos
         chain = self.create_panda_chain()
         joint_angles = self.compute_inverse_kinematics(chain)
@@ -218,21 +246,36 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
     
     def _reset_object(self, env_ids):
-        self.initialize_views_cloth(self._env._world.scene)
+        # self.initialize_views_cloth(self._env._world.scene) 
+        cloth_noise_xy = 2 * (torch.rand((self.num_envs, 2), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
+        cloth_noise_xy = cloth_noise_xy @ torch.diag(
+            torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
+        self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[env_ids, 0]
+        self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[env_ids, 1]
+
+        # self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0]
+        # self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1]
+        self.cloth_pos[env_ids, 2] = self.cfg_base.env.table_height
+        self.cloth_particle_vel[env_ids, :] = 0.0
+        indices = env_ids.to(dtype=torch.int32)
+
+        self.cloth.set_world_poses(self.cloth_pos[env_ids] + self.env_pos[env_ids], self.cloth_quat[env_ids], indices)
+        self.cloth.set_velocities(self.cloth_particle_vel[env_ids], indices)
 
 
     def add_attachment(self):
         for i in range(32): 
             attachment_plane_mesh_path = f"/World/envs/env_{i}/garment/attachment"
             attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
-            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_rightfinger/visuals/mesh_0"])
+            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_fingertip_centered/Cube"])
+            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_rightfinger/collisions/mesh_0"])
             attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs_{i}/garment/cloth"])
-            PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
+            attachment = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
+            attachment.GetDeformableVertexOverlapOffsetAttr().Set(1)
 
 
 
     def create_panda_chain(self):
-        # robot = URDF.from_xml_file("/home/ruiqiang/workspace/omniverse_gym/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
         robot = URDF.from_xml_file("/home/ruiqiang/workspace/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
         tree = kdl_tree_from_urdf_model(robot)
         chain = tree.getChain("panda_link0", "panda_link8")
@@ -267,11 +310,11 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             # target_x = self.target_postition[i, 0, 0].item()
             # target_y = self.target_postition[i, 0, 1].item()
             # target_z = self.target_postition[i, 0, 2].item()
-            target_x = self.target_postition[i, 0].item() + 0.5
-            target_y = -self.target_postition[i, 1].item()
-            target_z = self.target_postition[i, 2].item() + 0.15
+            target_x = self.target_postition[i, 0].item() + 0.5 - 0.1
+            target_y = -self.target_postition[i, 1].item() - 0.1
+            target_z = self.target_postition[i, 2].item() + 0.12
 
-            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0),
+            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
                                         PyKDL.Vector(target_x, target_y, target_z))
             # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0), PyKDL.Vector(0.51, -0.1460, 0.5))
             # print ("target_frame = ", target_frame)
@@ -463,7 +506,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
     def _update_rew_buf(self):
         """Compute reward at current timestep."""
 
-        keypoint_reward = -self._get_keypoint_dist()
+        keypoint_reward = -self._get_keypoint_dist()  #相减的值取负，所以随着实验进行会越来越大
+        
         action_penalty = torch.norm(self.actions, p=2, dim=-1) * self.cfg_task.rl.action_penalty_scale
 
         self.rew_buf[:] = keypoint_reward * self.cfg_task.rl.keypoint_reward_scale \

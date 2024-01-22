@@ -130,7 +130,7 @@ class ParticleClothExample:
                 self.clothView.set_world_positions(new_positions, indices)
                 updated_positions = self.clothView.get_world_positions()
                 # print("indices = ", indices)
-                # print("updated_positions = ", updated_positions)
+                print("updated_positions = ", updated_positions)
                 # for i in indices:
                 #     print("reset index {} average height = {:.2f}".format(i, updated_positions[i, :, 2].mean()))
 

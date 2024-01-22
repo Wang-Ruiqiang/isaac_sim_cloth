@@ -105,7 +105,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
                                    name="cloth_view",
                                    )
-
+        
         scene.add(self.cloth)
         scene.add(self.frankas)
         scene.add(self.frankas._hands)
@@ -147,8 +147,6 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.garment_heights = []
         self.garment_widths_max = []
         self.initial_positions = None
-        self.plane_meshs = []
-        self.cloth_paths = []
 
         for i in range(self._num_envs):
             self.garment_translation = torch.tensor([0.0, 0.0, self.cfg_base.env.table_height], device=self._device)
@@ -220,8 +218,6 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         physicsUtils.setup_transform_as_scale_orient_translate(plane_mesh)
         physicsUtils.set_or_add_translate_op(plane_mesh, init_loc)
         physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat())
-        self.plane_meshs.append(plane_mesh)
-        self.cloth_paths.append(cloth_path)
 
         particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
         particle_system = ParticleSystem(
@@ -256,8 +252,8 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses()
 
         self.cloth_pos -= self.env_pos
-        # cloth_velocities = self.cloth.get_velocities(clone=False)
-        # self.cloth_particle_vel = cloth_velocities[:, :]
+        cloth_velocities = self.cloth.get_velocities(clone=False)
+        self.cloth_particle_vel = cloth_velocities[:, :]
 
         # net contact force is not available yet
         # self.nut_force = ...
