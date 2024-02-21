@@ -56,7 +56,6 @@ class VecEnvRLGames(VecEnvBase):
             )
 
         actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device)
-
         self._task.pre_physics_step(actions)
 
         if (self.sim_frame_count + self._task.control_frequency_inv) % self._task.rendering_interval == 0:

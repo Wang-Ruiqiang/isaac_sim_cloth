@@ -17,4 +17,4 @@ env:
   desired_subassemblies: ['rigid', "particle_cloth", cloth]
   garment_lateral_offset: 0.0  # Y-axis offset of nut before initial reset to prevent initial interpenetration with bolt
   garment_density: 785.0
-  garment_friction: 0.6
+  garment_friction: 0.9

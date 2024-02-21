@@ -144,7 +144,7 @@ task:
     keypoint_scale: 0.5
     keypoint_reward_scale: 1.0
     action_penalty_scale: 0.0
-    max_episode_length: 100
+    max_episode_length: 150
     success_bonus: 0.0
   ctrl:
     ctrl_type: joint_space_id

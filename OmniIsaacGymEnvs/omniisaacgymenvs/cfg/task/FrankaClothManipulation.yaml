@@ -107,7 +107,7 @@ rl:
   keypoint_reward_scale: 1.0  # scale on keypoint-based reward
   action_penalty_scale: 0.0  # scale on action penalty
 
-  max_episode_length: 100 # 200
+  max_episode_length: 150 # 200
 
   success_bonus: 0.0  # bonus if nut has been lifted
 

@@ -129,7 +129,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
 
         #折叠衣服计算reward的时候的点的数据
-
     def pre_physics_step(self, actions) -> None:
         """Reset environments. Apply actions from policy. Simulation step called after this method."""
 
@@ -144,7 +143,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         self._apply_actions_as_ctrl_targets(
             actions=self.actions,
-            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
+            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,
             do_scale=True
         )
 
@@ -174,9 +173,9 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self._reset_object(env_ids)
         self._reset_franka(env_ids)
 
-        self.add_attachment()
+        # self.add_attachment()
     
-        self._randomize_gripper_pose(env_ids, sim_steps=self.cfg_task.env.num_gripper_move_sim_steps)
+        # self._randomize_gripper_pose(env_ids, sim_steps=self.cfg_task.env.num_gripper_move_sim_steps)
 
         self._reset_buffers(env_ids)
 
@@ -197,34 +196,10 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         """Reset DOF states and DOF targets of Franka."""
         indices = env_ids.to(dtype=torch.int32)
 
-        actions = torch.zeros((32, 12), device=self.device)
-        actions[env_ids, 0:3] = torch.tensor([-0.0102, -0.1460, 0.5], device=self.device)
+        # actions = torch.zeros((32, 12), device=self.device)
+        # actions[env_ids, 0:3] = torch.tensor([-0.0102, -0.1460, 0.5], device=self.device)
 
         self.target_postition, self.target_quat = self.cloth.get_world_poses()
-        
-        self.cloth_positon = self.cloth.get_world_positions()
-        # print("self.cloth_positon[0, 63] = ", self.cloth_positon[0, 63])
-        # print("self.cloth_positon[0, 63][1] = ", self.cloth_positon[0, 63][1])
-        # print("self.cloth_positon[0, 7] = ", self.cloth_positon[0, 7])
-        # print("self.cloth_positon[0, 7][1] = ", self.cloth_positon[0, 7][1])
-
-        # print("self.cloth_positon[0, 56] = ", self.cloth_positon[0, 56])
-        # print("self.cloth_positon[0, 56][1] = ", self.cloth_positon[0, 56][1])
-        # print("self.cloth_positon[0, 0] = ", self.cloth_positon[0, 0])
-        # print("self.cloth_positon[0, 0][1] = ", self.cloth_positon[0, 0][1])
-
-        # print(f"self.cloth_positon[0, 59] = ", self.cloth_positon[0, 59])
-        # print("self.cloth_positon[0, 59][1] = ", self.cloth_positon[0, 59][1])
-        # print(f"self.cloth_positon[0, 3] = ", self.cloth_positon[0, 3])
-        # print("self.cloth_positon[0, 3][1] = ", self.cloth_positon[0, 3][1])
-
-        # print(f"self.cloth_positon[0] = ", self.cloth_positon[0])
-
-
-
-        # for i in range(self.cloth_positon.size(0)):
-        #     print(f"self.cloth_positon[{i}] = ", self.cloth_positon[i])
-
 
         self.target_postition -= self.env_pos
         chain = self.create_panda_chain()
@@ -247,6 +222,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
     
     def _reset_object(self, env_ids):
         # self.initialize_views_cloth(self._env._world.scene) 
+        self.cloth_positon = self.cloth.get_world_positions()
         cloth_noise_xy = 2 * (torch.rand((self.num_envs, 2), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
         cloth_noise_xy = cloth_noise_xy @ torch.diag(
             torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
@@ -267,8 +243,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         for i in range(32): 
             attachment_plane_mesh_path = f"/World/envs/env_{i}/garment/attachment"
             attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
-            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_fingertip_centered/Cube"])
-            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_rightfinger/collisions/mesh_0"])
+            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_fingertip_centered/Cube"])
+            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_rightfinger/collisions/mesh_0"])
             attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs_{i}/garment/cloth"])
             attachment = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
             attachment.GetDeformableVertexOverlapOffsetAttr().Set(1)
@@ -312,7 +288,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             # target_z = self.target_postition[i, 0, 2].item()
             target_x = self.target_postition[i, 0].item() + 0.5 - 0.1
             target_y = -self.target_postition[i, 1].item() - 0.1
-            target_z = self.target_postition[i, 2].item() + 0.12
+            target_z = self.target_postition[i, 2].item() + 0.105
 
             target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
                                         PyKDL.Vector(target_x, target_y, target_z))
@@ -390,14 +366,14 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         if self._env._world.is_playing():
 
-            # In this policy, episode length is constant
-            is_last_step = (self.progress_buf[0] == self.max_episode_length - 1)
+            # # In this policy, episode length is constant
+            # is_last_step = (self.progress_buf[0] == self.max_episode_length - 1)
 
-            if self.cfg_task.env.close_and_lift:
-                # At this point, robot has executed RL policy. Now close gripper and lift (open-loop)
-                if is_last_step:
-                    self._close_gripper(sim_steps=self.cfg_task.env.num_gripper_close_sim_steps)
-                    self._lift_gripper(sim_steps=self.cfg_task.env.num_gripper_lift_sim_steps)
+            # if self.cfg_task.env.close_and_lift:
+            #     # At this point, robot has executed RL policy. Now close gripper and lift (open-loop)
+            #     if is_last_step:
+            #         self._close_gripper(sim_steps=self.cfg_task.env.num_gripper_close_sim_steps)
+            #         self._lift_gripper(sim_steps=self.cfg_task.env.num_gripper_lift_sim_steps)
 
             self.refresh_base_tensors()
             self.refresh_env_tensors()
@@ -513,14 +489,14 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self.rew_buf[:] = keypoint_reward * self.cfg_task.rl.keypoint_reward_scale \
                           - action_penalty * self.cfg_task.rl.action_penalty_scale
 
-        # In this policy, episode length is constant across all envs
-        is_last_step = (self.progress_buf[0] == self.max_episode_length - 1)
+        # # In this policy, episode length is constant across all envs
+        # is_last_step = (self.progress_buf[0] == self.max_episode_length - 1)
 
-        if is_last_step:
-            # Check if nut is picked up and above table
-            lift_success = self._check_lift_success(height_multiple=3.0)
-            self.rew_buf[:] += lift_success * self.cfg_task.rl.success_bonus
-            self.extras['successes'] = torch.mean(lift_success.float())
+        # if is_last_step:
+        #     # Check if nut is picked up and above table
+        #     lift_success = self._check_lift_success(height_multiple=3.0)
+        #     self.rew_buf[:] += lift_success * self.cfg_task.rl.success_bonus
+        #     self.extras['successes'] = torch.mean(lift_success.float())
 
 
     def _get_keypoint_offsets(self, num_keypoints):
@@ -535,7 +511,50 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
     def _get_keypoint_dist(self):
         """Get keypoint distance."""
 
-        keypoint_dist = torch.sum(torch.norm(self.keypoints_cloth - self.keypoints_gripper, p=2, dim=-1), dim=-1)
+        # print("self.cloth_positon[0, 63] = ", self.cloth_positon[0, 63])
+        # print("self.cloth_positon[0, 63][1] = ", self.cloth_positon[0, 63][1])
+        # print("self.cloth_positon[0, 7] = ", self.cloth_positon[0, 7])
+        # print("self.cloth_positon[0, 7][1] = ", self.cloth_positon[0, 7][1])
+
+        # print("self.cloth_positon[0, 56] = ", self.cloth_positon[0, 56])
+        # print("self.cloth_positon[0, 56][1] = ", self.cloth_positon[0, 56][1])
+        # print("self.cloth_positon[0, 0] = ", self.cloth_positon[0, 0])
+        # print("self.cloth_positon[0, 0][1] = ", self.cloth_positon[0, 0][1])
+
+        # print(f"self.cloth_positon[0, 59] = ", self.cloth_positon[0, 59])
+        # print("self.cloth_positon[0, 59][1] = ", self.cloth_positon[0, 59][1])
+        # print(f"self.cloth_positon[0, 3] = ", self.cloth_positon[0, 3])
+        # print("self.cloth_positon[0, 3][1] = ", self.cloth_positon[0, 3][1])
+
+        # print(f"self.cloth_positon[0] = ", self.cloth_positon[0])
+
+        self.point_one_dis = torch.zeros(
+            (self._num_envs, 3),
+            dtype=torch.float32,
+            device=self._device
+        )
+        self.point_two_dis = torch.zeros_like(self.point_one_dis, device=self._device)
+        self.point_three_dis = torch.zeros_like(self.point_one_dis, device=self._device)
+        self.dis_ave = torch.zeros_like(self.point_one_dis, device=self._device)
+
+        for i in range(self.cloth_positon.size(0)):
+        #     print(f"self.cloth_positon[{i}] = ", self.cloth_positon[i])
+            self.point_one_dis[i] = self.cloth_positon[i, 63] - self.cloth_positon[i, 7]
+            self.point_two_dis[i] = self.cloth_positon[i, 59] - self.cloth_positon[i, 3]
+            self.point_three_dis[i] = self.cloth_positon[i, 56] - self.cloth_positon[i, 0]
+            self.point_one_dis[i][2] = self.point_one_dis[i][2] * 6
+            self.point_two_dis[i][2] = self.point_two_dis[i][2] * 6
+            self.point_three_dis[i][2] = self.point_three_dis[i][2] * 6
+
+        self.dis_ave = (self.point_one_dis + self.point_two_dis + self.point_three_dis) / 3
+        keypoint_dist = torch.norm(self.dis_ave, p=2, dim=-1)
+        # keypoint_dist = torch.sum(torch.norm(self.keypoints_cloth - self.keypoints_gripper, p=2, dim=-1), dim=-1)
+        dist_rewards = keypoint_dist/(32*0.02)
+        # print("---------------------dist_rewards = ", dist_rewards)
+        extra_reward = 0.01
+
+        keypoint_dist += dist_rewards * extra_reward  # Extra for being closer to the goal
+        # print("----------------------------------keypoint_dist111 = ", keypoint_dist)
         return keypoint_dist
     
     def _close_gripper(self, sim_steps=20):
@@ -628,6 +647,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             actions = torch.zeros((self.num_envs, self.cfg_task.env.numActions), device=self.device)
             actions[:, :6] = delta_hand_pose
 
+            print("actions in _randomize_gripper_pose = ", actions)
             self._apply_actions_as_ctrl_targets(
                 actions=actions,
                 ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,

@@ -15,13 +15,11 @@ from omniisaacgymenvs.tasks.factory.factory_base import FactoryBase
 from omniisaacgymenvs.robots.articulations.franka import Franka
 from omni.isaac.core.utils.prims import get_prim_at_path
 from omniisaacgymenvs.robots.articulations.views.franka_view import FrankaView
-from omni.isaac.core.utils.stage import get_current_stage
 
 import omniisaacgymenvs.tasks.factory.factory_control as fc
 import omni.isaac.core.utils.torch as torch_utils
 
-from omni.isaac.core.utils.stage import add_reference_to_stage
-from omni.physx.scripts import physicsUtils, particleUtils, deformableUtils
+from omni.physx.scripts import physicsUtils, deformableUtils
 from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.prims.soft.particle_system import ParticleSystem
 from omni.isaac.core.prims.soft.cloth_prim import ClothPrim
@@ -106,6 +104,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
                                    name="cloth_view",
                                    )
         
+        scene.add(self.cube)
         scene.add(self.cloth)
         scene.add(self.frankas)
         scene.add(self.frankas._hands)
@@ -138,7 +137,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             self.nutboltPhysicsMaterialPath,
             density=self.cfg_env.env.garment_density,
             staticFriction=self.cfg_env.env.garment_friction,
-            dynamicFriction=0.0,
+            dynamicFriction=0.9,
             restitution=0.0,
         )
     
@@ -220,6 +219,11 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat())
 
         particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
+        particle_material_path = env.GetPrim().GetPath().AppendChild("particleMaterial")
+        self.particle_material = ParticleMaterial(
+            prim_path=particle_material_path, drag=0.1, lift=0.3, friction=0.9
+        )
+
         particle_system = ParticleSystem(
             particle_system_enabled = True,
             prim_path=particle_system_path,
@@ -238,12 +242,60 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             prim_path=str(cloth_path),
             name="clothPrim" + str(idx),
             particle_system=particle_system,
+            particle_material=self.particle_material,
             stretch_stiffness=10000.0,
             bend_stiffness=100.0,
             shear_stiffness=100.0,
             spring_damping=0.2,
             particle_mass=0.1,
         )
+
+        # self.create_deformable_object()
+        # cube_path = f"/World/envs/env_{idx}/Cube"
+        # self.cube = DynamicCuboid(
+        #         prim_path=cube_path, # The prim path of the cube in the USD stage
+        #         name="fancy_cube", # The unique name used to retrieve the object from the scene later on
+        #         position=np.array([0.2, 0.2, 0.5]), # Using the current stage units which is in meters by default.
+        #         # size=np.array([0.2, 0.2, 0.2]), # most arguments accept mainly numpy arrays.
+        #         size=0.2,
+        #         color=np.array([0, 0, 1.0]) # RGB channels, going from 0-1
+        #     )
+
+
+    def create_deformable_object(self):
+        result, path = omni.kit.commands.execute("CreateMeshPrimCommand", prim_type="Cube")
+        # Get the prim
+        cube_prim = self._stage.GetPrimAtPath(path)
+        
+        xform = UsdGeom.Xformable(cube_prim)
+        transform = xform.AddTransformOp()
+        mat = Gf.Matrix4d()
+        xform.AddTranslateOp().Set(Gf.Vec3d(0.0,0.0,1.0))   
+        mat.SetRotateOnly(Gf.Rotation(Gf.Vec3d(0,0,0), 290))  
+        xform.AddScaleOp().Set(Gf.Vec3f(0.5, 0.5, 0.5))
+        transform.Set(mat)
+        
+        simulation_resolution = 10
+        success = deformableUtils.add_physx_deformable_body(
+            self._stage,
+            xform.GetPath(),
+            collision_simplification=True,
+            simulation_hexahedral_resolution=simulation_resolution,
+            self_collision=False,
+        )
+
+        # Create a deformable body material and set it on the deformable body
+        deformable_material_path = omni.usd.get_stage_next_free_path(self._stage, "Cube", True)
+        deformableUtils.add_deformable_body_material(
+            self._stage,
+            deformable_material_path,
+            youngs_modulus=10000.0,
+            poissons_ratio=0.49,
+            damping_scale=0.0,
+            dynamic_friction=0.5,
+        )
+        physicsUtils.add_physics_material_to_prim(self._stage, xform.GetPrim(), deformable_material_path) 
+
 
     def refresh_env_tensors(self):
         """Refresh tensors."""
