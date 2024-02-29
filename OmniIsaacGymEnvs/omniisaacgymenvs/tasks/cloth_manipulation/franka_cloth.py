@@ -18,8 +18,12 @@ from omniisaacgymenvs.robots.articulations.views.franka_view import FrankaView
 
 import omniisaacgymenvs.tasks.factory.factory_control as fc
 import omni.isaac.core.utils.torch as torch_utils
+import omni.isaac.core.utils.deformable_mesh_utils as deformableMeshUtils
 
 from omni.physx.scripts import physicsUtils, deformableUtils
+from omni.isaac.core.materials.deformable_material import DeformableMaterial
+from omni.isaac.core.prims.soft.deformable_prim import DeformablePrim
+from omni.isaac.core.prims.soft.deformable_prim_view import DeformablePrimView
 from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.prims.soft.particle_system import ParticleSystem
 from omni.isaac.core.prims.soft.cloth_prim import ClothPrim
@@ -31,7 +35,7 @@ from omni.isaac.core.objects import DynamicCuboid
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
 from omniisaacgymenvs.robots.articulations.views.factory_franka_view import FactoryFrankaView
 
-from pxr import Gf, UsdGeom
+from pxr import Gf, UsdGeom, PhysxSchema
 import omni.kit.commands
 from omni.physx.scripts import utils, physicsUtils
 
@@ -68,7 +72,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
                                    name="cloth_view",
                                    )
-        # self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view")
+        self.deformableView = DeformablePrimView(prim_paths_expr="/World/envs/.*/deformable_object/deformable", name="deformableView")
         
         scene.add(self.frankas)
         scene.add(self.frankas._hands)
@@ -76,6 +80,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         scene.add(self.frankas._rfingers)
         scene.add(self.frankas._fingertip_centered)
         scene.add(self.cloth)
+        scene.add(self.deformableView)
 
         return
     
@@ -103,9 +108,10 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
                                    name="cloth_view",
                                    )
+        self.deformableView = DeformablePrimView(prim_paths_expr="/World/envs/.*/deformable_object/deformable", name="deformableView1")
         
-        scene.add(self.cube)
         scene.add(self.cloth)
+        scene.add(self.deformableView)
         scene.add(self.frankas)
         scene.add(self.frankas._hands)
         scene.add(self.frankas._lfingers)
@@ -164,7 +170,9 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             # add_reference_to_stage(garment_file, f"/World/envs/env_{i}" + "/garment")
             if add_to_stage:
                 self.import_cloth_view(i)
+        self.add_attachment()
             # self.import_XFormPrim_View(i)
+            
         
         self.garment_heights = torch.tensor(self.garment_heights, device=self._device).unsqueeze(-1)
         self.garment_widths_max = torch.tensor(self.garment_widths_max, device=self._device).unsqueeze(-1)
@@ -250,7 +258,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             particle_mass=0.1,
         )
 
-        # self.create_deformable_object()
+        self.create_deformable_object(idx)
         # cube_path = f"/World/envs/env_{idx}/Cube"
         # self.cube = DynamicCuboid(
         #         prim_path=cube_path, # The prim path of the cube in the USD stage
@@ -262,39 +270,66 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         #     )
 
 
-    def create_deformable_object(self):
-        result, path = omni.kit.commands.execute("CreateMeshPrimCommand", prim_type="Cube")
-        # Get the prim
-        cube_prim = self._stage.GetPrimAtPath(path)
-        
-        xform = UsdGeom.Xformable(cube_prim)
-        transform = xform.AddTransformOp()
-        mat = Gf.Matrix4d()
-        xform.AddTranslateOp().Set(Gf.Vec3d(0.0,0.0,1.0))   
-        mat.SetRotateOnly(Gf.Rotation(Gf.Vec3d(0,0,0), 290))  
-        xform.AddScaleOp().Set(Gf.Vec3f(0.5, 0.5, 0.5))
-        transform.Set(mat)
-        
-        simulation_resolution = 10
-        success = deformableUtils.add_physx_deformable_body(
-            self._stage,
-            xform.GetPath(),
-            collision_simplification=True,
-            simulation_hexahedral_resolution=simulation_resolution,
-            self_collision=False,
+    def create_deformable_object(self, idx):
+        init_loc = Gf.Vec3f(0, 0, 0)
+        env_path = f"/World/envs/env_{idx}/deformable_object"
+        env = UsdGeom.Xform.Define(self._stage, env_path)
+        deformable_path = env.GetPrim().GetPath().AppendChild("deformable")
+        physicsUtils.set_or_add_translate_op(UsdGeom.Xformable(env), init_loc) #deformable_object 初始坐标
+
+        skin_mesh = UsdGeom.Mesh.Define(self._stage, deformable_path)
+        tri_points, tri_indices = deformableMeshUtils.createTriangleMeshCube(4)
+
+        skin_mesh.GetPointsAttr().Set(tri_points)
+        skin_mesh.GetFaceVertexIndicesAttr().Set(tri_indices)
+        skin_mesh.GetFaceVertexCountsAttr().Set([3] * (len(tri_indices) // 3))
+        physicsUtils.setup_transform_as_scale_orient_translate(skin_mesh)
+        physicsUtils.set_or_add_translate_op(skin_mesh, (0.1, 0.04, 0.4)) #基于deformable_object的deformable物体初始坐标
+        physicsUtils.set_or_add_orient_op(skin_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat())
+        deformable_material_path = env.GetPrim().GetPath().AppendChild("deformableMaterial")
+        self.deformable_material = DeformableMaterial(
+            prim_path=deformable_material_path,
+            dynamic_friction=0.5,
+            youngs_modulus=5e4,
+            poissons_ratio=0.4,
+            damping_scale=0.1,
+            elasticity_damping=0.1,
         )
 
-        # Create a deformable body material and set it on the deformable body
-        deformable_material_path = omni.usd.get_stage_next_free_path(self._stage, "Cube", True)
-        deformableUtils.add_deformable_body_material(
-            self._stage,
-            deformable_material_path,
-            youngs_modulus=10000.0,
-            poissons_ratio=0.49,
-            damping_scale=0.0,
-            dynamic_friction=0.5,
+        self.deformable = DeformablePrim(
+            name="deformablePrim" + str(idx),
+            prim_path=str(deformable_path),
+            # deformable_material=self.deformable_material,
+            scale = np.array([0.04, 0.04, 0.04]),
+            vertex_velocity_damping=0.0,
+            sleep_damping=10,
+            sleep_threshold=0.05,
+            settling_threshold=0.1,
+            self_collision=True,
+            self_collision_filter_distance=0.05,
+            solver_position_iteration_count=20,
+            kinematic_enabled=False,
+            simulation_hexahedral_resolution=2,
+            collision_simplification=True,
         )
-        physicsUtils.add_physics_material_to_prim(self._stage, xform.GetPrim(), deformable_material_path) 
+
+
+    def add_attachment(self):
+        for i in range(32): 
+            attachment_plane_mesh_path = f"/World/envs/env_{i}/deformable_object/attachment_gripper"
+            attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
+            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_fingertip_centered/Cube"])
+            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_rightfinger/collisions/mesh_0"])
+            attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs/env_{i}/deformable_object/deformable"])
+            attachment_gripper = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
+            attachment_gripper.GetDeformableVertexOverlapOffsetAttr().Set(0.4)
+
+            # attachment_plane_mesh_path = f"/World/envs/env_{i}/deformable_object/attachment_cloth"
+            # attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
+            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/garment/cloth"])
+            # attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs/env_{i}/deformable_object/deformable"])
+            # attachment_cloth = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
+            # attachment_cloth.GetDeformableVertexOverlapOffsetAttr().Set(0.1)
 
 
     def refresh_env_tensors(self):
@@ -302,7 +337,6 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
 
         # self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses(clone=False)
         self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses()
-
         self.cloth_pos -= self.env_pos
         cloth_velocities = self.cloth.get_velocities(clone=False)
         self.cloth_particle_vel = cloth_velocities[:, :]

@@ -143,7 +143,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         self._apply_actions_as_ctrl_targets(
             actions=self.actions,
-            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,
+            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,   #初始状态夹爪位置
             do_scale=True
         )
 
@@ -172,8 +172,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         """Reset specified environments."""
         self._reset_object(env_ids)
         self._reset_franka(env_ids)
-
-        # self.add_attachment()
     
         # self._randomize_gripper_pose(env_ids, sim_steps=self.cfg_task.env.num_gripper_move_sim_steps)
 
@@ -199,9 +197,11 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         # actions = torch.zeros((32, 12), device=self.device)
         # actions[env_ids, 0:3] = torch.tensor([-0.0102, -0.1460, 0.5], device=self.device)
 
-        self.target_postition, self.target_quat = self.cloth.get_world_poses()
+        # self.target_postition, self.target_quat = self.cloth.get_world_poses()
+        self.target_postition, self.target_quat = self.deformableView.get_world_poses()
 
         self.target_postition -= self.env_pos
+        print("self.target_postition = ", self.target_postition)
         chain = self.create_panda_chain()
         joint_angles = self.compute_inverse_kinematics(chain)
         joint_angles = np.array(joint_angles)
@@ -228,6 +228,10 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
         self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[env_ids, 0]
         self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[env_ids, 1]
+        cloth_quat = Gf.Rotation(Gf.Vec3d([1, 0, 0]), 45).GetQuat()
+        # self.cloth_quat[env_ids, 0] = cloth_quat
+        # self.cloth_quat[env_ids, 1] = cloth_quat[1]
+        # print("self.cloth_quat = ", self.cloth_quat)
 
         # self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0]
         # self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1]
@@ -238,18 +242,13 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self.cloth.set_world_poses(self.cloth_pos[env_ids] + self.env_pos[env_ids], self.cloth_quat[env_ids], indices)
         self.cloth.set_velocities(self.cloth_particle_vel[env_ids], indices)
 
-
-    def add_attachment(self):
-        for i in range(32): 
-            attachment_plane_mesh_path = f"/World/envs/env_{i}/garment/attachment"
-            attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
-            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_fingertip_centered/Cube"])
-            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs_{i}/franka/panda_rightfinger/collisions/mesh_0"])
-            attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs_{i}/garment/cloth"])
-            attachment = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
-            attachment.GetDeformableVertexOverlapOffsetAttr().Set(1)
-
-
+        #----------------------重置deformablebody位置
+        self.deformable_position, self.deformable_orientation = self.deformableView.get_world_poses()
+        self.deformable_position[env_ids, 0] = 0.1
+        self.deformable_position[env_ids, 1] = 0.04
+        self.deformable_position[env_ids, 2] = self.cfg_base.env.table_height
+        self.deformableView.set_world_poses(self.deformable_position[env_ids] + self.env_pos[env_ids],
+                                            self.deformable_orientation[env_ids], indices)
 
     def create_panda_chain(self):
         robot = URDF.from_xml_file("/home/ruiqiang/workspace/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
@@ -286,9 +285,12 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             # target_x = self.target_postition[i, 0, 0].item()
             # target_y = self.target_postition[i, 0, 1].item()
             # target_z = self.target_postition[i, 0, 2].item()
-            target_x = self.target_postition[i, 0].item() + 0.5 - 0.1
-            target_y = -self.target_postition[i, 1].item() - 0.1
-            target_z = self.target_postition[i, 2].item() + 0.105
+
+            # target_x = self.target_postition[i, 0].item() + 0.5 - 0.1
+            # target_y = -self.target_postition[i, 1].item() - 0.1
+            target_x = self.target_postition[i, 0].item() + 0.5 - 0.2
+            target_y = -self.target_postition[i, 1].item()
+            target_z = self.target_postition[i, 2].item() + 0.13
 
             target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
                                         PyKDL.Vector(target_x, target_y, target_z))
@@ -308,6 +310,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             else :
                 print("Error: could not calculate ik kinematics :(")
         return result
+
 
     def _apply_actions_as_ctrl_targets(self, actions, ctrl_target_gripper_dof_pos, do_scale):
         """Apply actions from policy as position/rotation targets."""
