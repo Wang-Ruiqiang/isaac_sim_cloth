@@ -78,7 +78,7 @@ def import_tasks():
     task_map_warp = {
         "Cartpole": CartpoleTaskWarp,
         "Ant":AntLocomotionTaskWarp,
-        "Humanoid": HumanoidLocomotionTaskWarp
+        "Humanoid": HumanoidLocomotionTaskWarp,
     }
 
     return task_map, task_map_warp

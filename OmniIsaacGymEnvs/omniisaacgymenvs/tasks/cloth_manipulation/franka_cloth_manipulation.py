@@ -128,7 +128,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
 
 
-        #折叠衣服计算reward的时候的点的数据
+        
     def pre_physics_step(self, actions) -> None:
         """Reset environments. Apply actions from policy. Simulation step called after this method."""
 
@@ -143,7 +143,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         self._apply_actions_as_ctrl_targets(
             actions=self.actions,
-            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,   #初始状态夹爪位置
+            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,   #初始状态夹爪位置
             do_scale=True
         )
 
@@ -197,11 +197,9 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         # actions = torch.zeros((32, 12), device=self.device)
         # actions[env_ids, 0:3] = torch.tensor([-0.0102, -0.1460, 0.5], device=self.device)
 
-        # self.target_postition, self.target_quat = self.cloth.get_world_poses()
-        self.target_postition, self.target_quat = self.deformableView.get_world_poses()
+        self.target_postition, self.target_quat = self.cloth.get_world_poses()
 
         self.target_postition -= self.env_pos
-        print("self.target_postition = ", self.target_postition)
         chain = self.create_panda_chain()
         joint_angles = self.compute_inverse_kinematics(chain)
         joint_angles = np.array(joint_angles)
@@ -221,21 +219,16 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
     
     def _reset_object(self, env_ids):
-        # self.initialize_views_cloth(self._env._world.scene) 
         self.cloth_positon = self.cloth.get_world_positions()
         cloth_noise_xy = 2 * (torch.rand((self.num_envs, 2), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
         cloth_noise_xy = cloth_noise_xy @ torch.diag(
             torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
         self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[env_ids, 0]
         self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[env_ids, 1]
-        cloth_quat = Gf.Rotation(Gf.Vec3d([1, 0, 0]), 45).GetQuat()
-        # self.cloth_quat[env_ids, 0] = cloth_quat
-        # self.cloth_quat[env_ids, 1] = cloth_quat[1]
-        # print("self.cloth_quat = ", self.cloth_quat)
 
         # self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0]
         # self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1]
-        self.cloth_pos[env_ids, 2] = self.cfg_base.env.table_height
+        self.cloth_pos[env_ids, 2] = self.cfg_base.env.table_height + 0.04
         self.cloth_particle_vel[env_ids, :] = 0.0
         indices = env_ids.to(dtype=torch.int32)
 
@@ -243,12 +236,12 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self.cloth.set_velocities(self.cloth_particle_vel[env_ids], indices)
 
         #----------------------重置deformablebody位置
-        self.deformable_position, self.deformable_orientation = self.deformableView.get_world_poses()
-        self.deformable_position[env_ids, 0] = 0.1
-        self.deformable_position[env_ids, 1] = 0.04
-        self.deformable_position[env_ids, 2] = self.cfg_base.env.table_height
-        self.deformableView.set_world_poses(self.deformable_position[env_ids] + self.env_pos[env_ids],
-                                            self.deformable_orientation[env_ids], indices)
+        # self.deformable_position, self.deformable_orientation = self.deformableView.get_world_poses()
+        # self.deformable_position[env_ids, 0] = 0.1
+        # self.deformable_position[env_ids, 1] = 0.04
+        # self.deformable_position[env_ids, 2] = self.cfg_base.env.table_height
+        # self.deformableView.set_world_poses(self.deformable_position[env_ids] + self.env_pos[env_ids],
+        #                                     self.deformable_orientation[env_ids], indices)
 
     def create_panda_chain(self):
         robot = URDF.from_xml_file("/home/ruiqiang/workspace/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
@@ -286,13 +279,11 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             # target_y = self.target_postition[i, 0, 1].item()
             # target_z = self.target_postition[i, 0, 2].item()
 
-            # target_x = self.target_postition[i, 0].item() + 0.5 - 0.1
-            # target_y = -self.target_postition[i, 1].item() - 0.1
-            target_x = self.target_postition[i, 0].item() + 0.5 - 0.2
-            target_y = -self.target_postition[i, 1].item()
-            target_z = self.target_postition[i, 2].item() + 0.13
+            target_x = self.target_postition[i, 0].item() + 0.50 - 0.088
+            target_y = -self.target_postition[i, 1].item() - 0.098
+            target_z = self.target_postition[i, 2].item() + 0.092
 
-            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
+            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -0.7854),
                                         PyKDL.Vector(target_x, target_y, target_z))
             # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0), PyKDL.Vector(0.51, -0.1460, 0.5))
             # print ("target_frame = ", target_frame)
@@ -431,6 +422,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         # Compute pos of keypoints on gripper and cloth in world frame
         for idx, keypoint_offset in enumerate(self.keypoint_offsets):
+            #TODO 这个应该现在没什么用
             self.keypoints_gripper[:, idx] = tf_combine(
                 self.fingertip_midpoint_quat,
                 self.fingertip_midpoint_pos,
@@ -448,13 +440,23 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         """Compute observations."""
 
         # Shallow copies of tensors
+        # obs_tensors = [self.fingertip_midpoint_pos,
+        #                self.fingertip_midpoint_quat,
+        #                self.fingertip_midpoint_linvel,
+        #                self.fingertip_midpoint_angvel,
+        #                self.cloth_grasp_pos,
+        #                self.cloth_grasp_quat]
+
+        achieved_goal = torch.cat((self.particle_cloth_positon[0, 63], self.particle_cloth_positon[0, 56], self.particle_cloth_positon[0, 32],
+                            self.particle_cloth_positon[0, 39], self.particle_cloth_positon[0, 7], self.particle_cloth_positon[0, 0]), 0)
+        
         obs_tensors = [self.fingertip_midpoint_pos,
                        self.fingertip_midpoint_quat,
                        self.fingertip_midpoint_linvel,
                        self.fingertip_midpoint_angvel,
-                       self.cloth_grasp_pos,
-                       self.cloth_grasp_quat]
-
+                       self.constraint_dis,]
+        
+        # print("self.constraint_dis = ", self.constraint_dis)
         self.obs_buf = torch.cat(obs_tensors, dim=-1)  # shape = (num_envs, num_observations)
 
         observations = {
@@ -485,7 +487,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
     def _update_rew_buf(self):
         """Compute reward at current timestep."""
 
-        keypoint_reward = -self._get_keypoint_dist()  #相减的值取负，所以随着实验进行会越来越大
+        # keypoint_reward = -self._get_keypoint_dist()  #相减的值取负，所以随着实验进行会越来越大
+        keypoint_reward = self._get_keypoint_dist()  #相减的值取负，所以随着实验进行会越来越大
         
         action_penalty = torch.norm(self.actions, p=2, dim=-1) * self.cfg_task.rl.action_penalty_scale
 
@@ -531,34 +534,75 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         # print(f"self.cloth_positon[0] = ", self.cloth_positon[0])
 
-        self.point_one_dis = torch.zeros(
-            (self._num_envs, 3),
-            dtype=torch.float32,
-            device=self._device
-        )
-        self.point_two_dis = torch.zeros_like(self.point_one_dis, device=self._device)
-        self.point_three_dis = torch.zeros_like(self.point_one_dis, device=self._device)
-        self.dis_ave = torch.zeros_like(self.point_one_dis, device=self._device)
+        # self.point_one_dis = torch.zeros(
+        #     (self._num_envs, 3),
+        #     dtype=torch.float32,
+        #     device=self._device
+        # )
+        # self.point_two_dis = torch.zeros_like(self.point_one_dis, device=self._device)
+        # self.point_three_dis = torch.zeros_like(self.point_one_dis, device=self._device)
+        # self.point_four_dis = torch.zeros_like(self.point_one_dis, device=self._device)
+        # self.point_five_dis = torch.zeros_like(self.point_one_dis, device=self._device)
+        # self.point_six_dis = torch.zeros_like(self.point_one_dis, device=self._device)
+        # self.dis_ave = torch.zeros_like(self.point_one_dis, device=self._device)
 
-        for i in range(self.cloth_positon.size(0)):
-        #     print(f"self.cloth_positon[{i}] = ", self.cloth_positon[i])
-            self.point_one_dis[i] = self.cloth_positon[i, 63] - self.cloth_positon[i, 7]
-            self.point_two_dis[i] = self.cloth_positon[i, 59] - self.cloth_positon[i, 3]
-            self.point_three_dis[i] = self.cloth_positon[i, 56] - self.cloth_positon[i, 0]
-            self.point_one_dis[i][2] = self.point_one_dis[i][2] * 6
-            self.point_two_dis[i][2] = self.point_two_dis[i][2] * 6
-            self.point_three_dis[i][2] = self.point_three_dis[i][2] * 6
+        # for i in range(self.cloth_positon.size(0)):
+        #     self.point_one_dis[0] = self.cloth_positon[0, 63] - self.cloth_positon[0, 7]
+        #     self.point_two_dis[0] = self.cloth_positon[0, 59] - self.cloth_positon[0, 3]
+        #     self.point_three_dis[0] = self.cloth_positon[0, 56] - self.cloth_positon[0, 0]
 
-        self.dis_ave = (self.point_one_dis + self.point_two_dis + self.point_three_dis) / 3
-        keypoint_dist = torch.norm(self.dis_ave, p=2, dim=-1)
-        # keypoint_dist = torch.sum(torch.norm(self.keypoints_cloth - self.keypoints_gripper, p=2, dim=-1), dim=-1)
-        dist_rewards = keypoint_dist/(32*0.02)
-        # print("---------------------dist_rewards = ", dist_rewards)
-        extra_reward = 0.01
+        #     self.point_four_dis[0] = self.cloth_positon[0, 61] - self.cloth_positon[0, 5]
+        #     self.point_five_dis[0] = self.cloth_positon[0, 57] - self.cloth_positon[0, 1]
+        #     self.point_six_dis[0] = self.cloth_positon[0, 60] - self.cloth_positon[0, 4]
 
-        keypoint_dist += dist_rewards * extra_reward  # Extra for being closer to the goal
-        # print("----------------------------------keypoint_dist111 = ", keypoint_dist)
-        return keypoint_dist
+        #     self.point_one_dis[i][2] = self.point_one_dis[i][2]
+        #     self.point_two_dis[i][2] = self.point_two_dis[i][2]
+        #     self.point_three_dis[i][2] = self.point_three_dis[i][2]
+        #     self.point_four_dis[i][2] = self.point_four_dis[i][2]
+        #     self.point_five_dis[i][2] = self.point_five_dis[i][2]
+        #     self.point_six_dis[i][2] = self.point_six_dis[i][2]
+        # self.dis_ave = (self.point_one_dis + self.point_two_dis + self.point_three_dis
+        #                 + self.point_four_dis + self.point_five_dis + self.point_six_dis) / 6
+        # keypoint_dist = torch.norm(self.dis_ave, p=2, dim=-1)
+        # # keypoint_dist = torch.sum(torch.norm(self.keypoints_cloth - self.keypoints_gripper, p=2, dim=-1), dim=-1)
+        # dist_rewards = keypoint_dist/(1*0.02)
+        # extra_reward = 0.01
+
+        # keypoint_dist += dist_rewards * extra_reward  # Extra for being closer to the goal
+        # return -keypoint_dist
+
+
+
+        achieved_oks = torch.zeros((1, 3),
+                                   dtype=torch.float32,
+                                   device=self._device)
+        achieved_distances = torch.zeros((1, 3),
+                                   dtype=torch.float32,
+                                   device=self._device)
+        success_reward = 0
+        fail_reward = -1
+        achieved_oks[:, 0] = self.point_one_dis < 0.05
+        achieved_oks[:, 1] = self.point_two_dis < 0.05
+        achieved_oks[:, 2] = self.point_three_dis < 0.05
+        # achieved_oks[:, 3] = point_four_dis < 0.05
+        # achieved_oks[:, 4] = point_five_dis < 0.05
+        # achieved_oks[:, 5] = point_six_dis < 0.05
+
+        achieved_distances[:, 0] = self.point_one_dis
+        achieved_distances[:, 1] = self.point_two_dis
+        achieved_distances[:, 2] = self.point_three_dis
+        # achieved_distances[:, 3] = point_four_dis
+        # achieved_distances[:, 4] = point_five_dis
+        # achieved_distances[:, 5] = point_six_dis
+        successes = torch.all(achieved_oks, axis=1)
+        fails = torch.logical_not(successes)
+        task_rewards = successes.float().flatten() * success_reward
+        dist_rewards = torch.sum((1 - achieved_distances/torch.tensor([0.02, 0.02, 0.02], device=self._device)),
+                                  axis=1) / 3
+        
+        task_rewards += dist_rewards  # Extra for being closer to the goal
+        task_rewards[fails] = fail_reward
+        return task_rewards
     
     def _close_gripper(self, sim_steps=20):
         """Fully close gripper using controller. Called outside RL loop (i.e., after last step of episode)."""

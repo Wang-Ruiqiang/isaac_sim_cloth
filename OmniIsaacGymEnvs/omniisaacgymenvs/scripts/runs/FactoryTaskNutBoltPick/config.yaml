@@ -83,8 +83,8 @@ task:
       rest_offset: 0.0
   env:
     controlFrequencyInv: 2
-    numEnvs: ${resolve_default:32,${...num_envs}}
-    numObservations: 20
+    numEnvs: ${resolve_default:1,${...num_envs}}
+    numObservations: 16
     numActions: 12
     close_and_lift: true
     num_gripper_move_sim_steps: 40
@@ -119,8 +119,8 @@ task:
     - 0.0
     - -0.1
     cloth_pos_xy_initial_noise:
-    - 0.0001
-    - 0.0001
+    - 1.0e-05
+    - 1.0e-05
   rl:
     pos_action_scale:
     - 0.1
@@ -384,7 +384,7 @@ train:
       truncate_grads: false
       e_clip: 0.2
       horizon_length: 240
-      minibatch_size: 512
+      minibatch_size: 240
       mini_epochs: 8
       critic_coef: 2
       clip_value: true

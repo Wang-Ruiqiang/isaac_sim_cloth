@@ -65,9 +65,16 @@ params:
     truncate_grads: False
     e_clip: 0.2
     horizon_length: 240 #120
-    minibatch_size: 512
+    minibatch_size: 240
     mini_epochs: 8
     critic_coef: 2
     clip_value: True
     seq_len: 4
     bounds_loss_coef: 0.0001
+
+    # num_warmup_steps: 10
+    # batch_size: 1
+    # critic_tau: 0.005
+    # init_alpha: 1.0
+    # learnable_temperature: true
+    # replay_buffer_size: 1000000

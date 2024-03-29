@@ -72,8 +72,8 @@ sim:
 
 env:
   controlFrequencyInv: 2 # 60 hz
-  numEnvs: ${resolve_default:32,${...num_envs}}
-  numObservations: 20
+  numEnvs: ${resolve_default:1,${...num_envs}}
+  numObservations: 16
   numActions: 12
 
   close_and_lift: True  # close gripper and lift after last step of episode
@@ -90,7 +90,7 @@ randomize:
   fingertip_midpoint_rot_initial: [3.1416, 0, 3.1416]  # initial rotation of fingertips (Euler)
   fingertip_midpoint_rot_noise: [0.3, 0.3, 1]  # noise on rotation
   cloth_pos_xy_initial: [0.0, -0.1]  # initial XY position of nut on table
-  cloth_pos_xy_initial_noise: [0.0001, 0.0001]  # noise on nut position
+  cloth_pos_xy_initial_noise: [0.00001, 0.00001]  # noise on nut position
 
 rl:
   pos_action_scale: [0.1, 0.1, 0.1]
@@ -107,7 +107,7 @@ rl:
   keypoint_reward_scale: 1.0  # scale on keypoint-based reward
   action_penalty_scale: 0.0  # scale on action penalty
 
-  max_episode_length: 150 # 200
+  max_episode_length: 150 # 200 每一次操作的时间
 
   success_bonus: 0.0  # bonus if nut has been lifted
 

@@ -28,14 +28,15 @@ from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.prims.soft.particle_system import ParticleSystem
 from omni.isaac.core.prims.soft.cloth_prim import ClothPrim
 from omni.isaac.core.prims.soft.cloth_prim_view import ClothPrimView
+from omni.isaac.core.prims.rigid_prim_view import RigidPrimView
 from omni.isaac.core.materials import ParticleMaterial
 from omni.isaac.core.utils.torch.transformations import *
-from omni.isaac.core.objects import DynamicCuboid
+from omni.isaac.core.objects import DynamicCuboid, DynamicCone, FixedCone
 
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
 from omniisaacgymenvs.robots.articulations.views.factory_franka_view import FactoryFrankaView
 
-from pxr import Gf, UsdGeom, PhysxSchema
+from pxr import Gf, UsdGeom, PhysxSchema, UsdPhysics
 import omni.kit.commands
 from omni.physx.scripts import utils, physicsUtils
 
@@ -66,13 +67,15 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         # self.create_cloth_material()
         RLTask.set_up_scene(self, scene, replicate_physics=False)
         self._import_env_assets(add_to_stage=True)
+        # self.create_cone()
+        # self.add_attachment()
         
         self.frankas = FactoryFrankaView(prim_paths_expr="/World/envs/.*/franka", name="frankas_view")
         # self.cloth = RigidPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view")
         self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
                                    name="cloth_view",
                                    )
-        self.deformableView = DeformablePrimView(prim_paths_expr="/World/envs/.*/deformable_object/deformable", name="deformableView")
+        # self.deformableView = DeformablePrimView(prim_paths_expr="/World/envs/.*/deformable_object/deformable", name="deformableView")
         
         scene.add(self.frankas)
         scene.add(self.frankas._hands)
@@ -80,7 +83,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         scene.add(self.frankas._rfingers)
         scene.add(self.frankas._fingertip_centered)
         scene.add(self.cloth)
-        scene.add(self.deformableView)
+        # scene.add(self.deformableView)
 
         return
     
@@ -108,31 +111,14 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
                                    name="cloth_view",
                                    )
-        self.deformableView = DeformablePrimView(prim_paths_expr="/World/envs/.*/deformable_object/deformable", name="deformableView1")
         
         scene.add(self.cloth)
-        scene.add(self.deformableView)
+        # scene.add(self.deformableView)
         scene.add(self.frankas)
         scene.add(self.frankas._hands)
         scene.add(self.frankas._lfingers)
         scene.add(self.frankas._rfingers)
         scene.add(self.frankas._fingertip_centered)
-
-
-    def initialize_views_cloth(self, scene) -> None:
-        """Initialize views for extension workflow."""
-
-        super().initialize_views(scene)
-        if scene.object_exists("cloth_view"):
-            scene.remove_object("cloth_view", registry_only=True)
-
-        self._import_env_assets(add_to_stage=True)
-
-        self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
-                                   name="cloth_view",
-                                   )
-
-        scene.add(self.cloth)
 
 
     def create_cloth_material(self):
@@ -170,7 +156,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             # add_reference_to_stage(garment_file, f"/World/envs/env_{i}" + "/garment")
             if add_to_stage:
                 self.import_cloth_view(i)
-        self.add_attachment()
+                # self.create_cone(i)
             # self.import_XFormPrim_View(i)
             
         
@@ -191,6 +177,53 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
                 self.nutboltPhysicsMaterialPath
             )
         
+    def create_cone(self):
+        # cone_path = f"/World/envs/env_{idx}" + "/cone"
+        cone_path = self.default_zero_env_path + "/cone"
+        height = 0.02
+        radius = 0.04
+        position = Gf.Vec3f(0.09, -0.01, 0.41)
+        orientation = Gf.Quatf(0.0, 0.0, 0.0, 1.0)
+        linVelocity = Gf.Vec3f(0.0, 0.0, 0.0)
+        angularVelocity = Gf.Vec3f(0.0, 0.0, 1000.0)
+        # FixedCone(
+        #     prim_path = cone_path,
+        #     name = "cone",
+        #     translation = np.array([0.0, -0.1, 0.4]),
+        #     scale = np.array([0.05, 0.05, 0.05]),
+        # )
+        # cone1Geom = UsdGeom.Cone.Define(self._stage, cone_path)
+        # cone1Prim = self._stage.GetPrimAtPath(cone_path)
+        # cone1Geom.CreateHeightAttr(height)
+        # cone1Geom.CreateRadiusAttr(radius)
+        # cone1Geom.CreateExtentAttr([(-radius, -radius, -height/2), (radius, radius, height/2)])
+        # cone1Geom.CreateAxisAttr(UsdGeom.GetStageUpAxis(self._stage))
+        # cone1Geom.AddTranslateOp().Set(position)
+        # cone1Geom.AddOrientOp().Set(orientation)
+        # cone1Geom.AddScaleOp().Set(Gf.Vec3f(1.0, 1.0, 1.0))
+        # # cone1Geom.CreateDisplayColorAttr().Set([demo.get_primary_color(1)])
+
+        # UsdPhysics.CollisionAPI.Apply(cone1Prim)
+        # physicsAPI = UsdPhysics.RigidBodyAPI.Apply(cone1Prim)
+        # physicsAPI.CreateVelocityAttr().Set(linVelocity)
+        # physicsAPI.CreateAngularVelocityAttr().Set(angularVelocity)
+        # UsdPhysics.MassAPI.Apply(cone1Prim)
+        cone0Geom = physicsUtils.create_mesh_cone(self._stage, cone_path, height, radius)
+        cone0Prim = self._stage.GetPrimAtPath(cone_path)
+        cone0Geom.AddTranslateOp().Set(position)
+        cone0Geom.AddOrientOp().Set(orientation)
+        cone0Geom.AddScaleOp().Set(Gf.Vec3f(1.0, 1.0, 1.0))
+        # cone0Geom.CreateDisplayColorAttr().Set([demo.get_primary_color(0)])
+
+        UsdPhysics.CollisionAPI.Apply(cone0Prim)
+        mesh_api = UsdPhysics.MeshCollisionAPI.Apply(cone0Prim)
+        mesh_api.CreateApproximationAttr(UsdPhysics.Tokens.convexHull)
+
+        physicsAPI = UsdPhysics.RigidBodyAPI.Apply(cone0Prim)
+        physicsAPI.CreateVelocityAttr().Set(linVelocity)
+        physicsAPI.CreateAngularVelocityAttr().Set(angularVelocity)
+        UsdPhysics.MassAPI.Apply(cone0Prim)
+        
     def import_cloth_view(self, idx):
         # radius = 0.15 * (0.6 / 5.0)
         # restOffset = radius
@@ -207,7 +240,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0]
         cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1]
 
-        cloth_z_pos = self.cfg_base.env.table_height
+        cloth_z_pos = self.cfg_base.env.table_height + 0.04
         # garment_position = torch.tensor([cloth_x_pos, cloth_y_pos, cloth_z_pos], device=self._device) 
 
         env_path = f"/World/envs/env_{idx}/garment"
@@ -216,6 +249,8 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         cloth_path = env.GetPrim().GetPath().AppendChild("cloth")
 
         plane_mesh = UsdGeom.Mesh.Define(self._stage, cloth_path)
+        physicsUtils.set_or_add_translate_op(UsdGeom.Xformable(env), Gf.Vec3f(0, 0, 0))
+
         self.tri_points, self.tri_indices = deformableUtils.create_triangle_mesh_square(dimx=7, dimy=7, scale=0.2)
         plane_mesh.GetPointsAttr().Set(self.tri_points)
         plane_mesh.GetFaceVertexIndicesAttr().Set(self.tri_indices)
@@ -224,12 +259,12 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(plane_mesh)
         physicsUtils.set_or_add_translate_op(plane_mesh, init_loc)
-        physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat())
+        physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
 
         particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
         particle_material_path = env.GetPrim().GetPath().AppendChild("particleMaterial")
         self.particle_material = ParticleMaterial(
-            prim_path=particle_material_path, drag=0.1, lift=0.3, friction=0.9
+            prim_path=particle_material_path, drag=0.8, lift=0.1, friction=0.8
         )
 
         particle_system = ParticleSystem(
@@ -258,8 +293,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             particle_mass=0.1,
         )
 
-        self.create_deformable_object(idx)
-        # cube_path = f"/World/envs/env_{idx}/Cube"
+        # self.create_deformable_object(idx)
         # self.cube = DynamicCuboid(
         #         prim_path=cube_path, # The prim path of the cube in the USD stage
         #         name="fancy_cube", # The unique name used to retrieve the object from the scene later on
@@ -316,13 +350,13 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
 
     def add_attachment(self):
         for i in range(32): 
-            attachment_plane_mesh_path = f"/World/envs/env_{i}/deformable_object/attachment_gripper"
-            attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
-            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_fingertip_centered/Cube"])
-            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_rightfinger/collisions/mesh_0"])
-            attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs/env_{i}/deformable_object/deformable"])
-            attachment_gripper = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
-            attachment_gripper.GetDeformableVertexOverlapOffsetAttr().Set(0.4)
+            # attachment_plane_mesh_path = f"/World/envs/env_{i}/deformable_object/attachment_gripper"
+            # attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
+            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_fingertip_centered/Cube"])
+            # # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_rightfinger/collisions/mesh_0"])
+            # attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs/env_{i}/deformable_object/deformable"])
+            # attachment_gripper = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
+            # attachment_gripper.GetDeformableVertexOverlapOffsetAttr().Set(0.4)
 
             # attachment_plane_mesh_path = f"/World/envs/env_{i}/deformable_object/attachment_cloth"
             # attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
@@ -331,24 +365,55 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             # attachment_cloth = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
             # attachment_cloth.GetDeformableVertexOverlapOffsetAttr().Set(0.1)
 
+            attachment_plane_mesh_path = f"/World/envs/env_{i}/attachment"
+            attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
+            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/table"])
+            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_rightfinger/collisions/mesh_0"])
+            attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs/env_{i}/cone"])
+            attachment_gripper = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
+            attachment_gripper.GetDeformableVertexOverlapOffsetAttr().Set(0.1)
+
+    def goal_distance(self, goal_a, goal_b):
+        assert goal_a.shape == goal_b.shape
+        return torch.norm(goal_a - goal_b, p=2, dim=-1)
+
 
     def refresh_env_tensors(self):
         """Refresh tensors."""
 
         # self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses(clone=False)
-        self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses()
+        self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses() #对cloth来说这个坐标不会动
+        self.particle_cloth_positon = self.cloth.get_world_positions()
+        self.particle_cloth_positon -= self.env_pos
         self.cloth_pos -= self.env_pos
+
+        self.point_one_dis = self.goal_distance(self.particle_cloth_positon[0, 63], self.particle_cloth_positon[0, 7])
+        self.point_two_dis = self.goal_distance(self.particle_cloth_positon[0, 59], self.particle_cloth_positon[0, 3])
+        self.point_three_dis = self.goal_distance(self.particle_cloth_positon[0, 56], self.particle_cloth_positon[0, 0])
+
+        self.mid_point_dis = self.goal_distance(self.particle_cloth_positon[0, 32], self.particle_cloth_positon[0, 24])
+        self.mid_point_dis_two = self.goal_distance(self.particle_cloth_positon[0, 39], self.particle_cloth_positon[0, 31])
+        
+        self.desired_goal = torch.cat((self.particle_cloth_positon[0, 7], self.particle_cloth_positon[0, 0], 
+                                       self.particle_cloth_positon[0, 24], self.particle_cloth_positon[0, 31], 
+                                       self.particle_cloth_positon[0, 7], self.particle_cloth_positon[0, 0]), dim = -1)
+        
+
+        
+        self.constraint_dis = torch.tensor([[self.point_one_dis, self.point_two_dis, self.point_three_dis]], device = self._device)
+
         cloth_velocities = self.cloth.get_velocities(clone=False)
+        self.cloth_vel = torch.cat((cloth_velocities[0, 0], cloth_velocities[0, 3], 
+                                    cloth_velocities[0, 7], cloth_velocities[0, 24],
+                                    cloth_velocities[0, 31], cloth_velocities[0, 32], 
+                                    cloth_velocities[0, 39], cloth_velocities[0, 56],
+                                    cloth_velocities[0, 59], cloth_velocities[0, 63]), dim = -1)
+        
+        self.cloth_pos = torch.cat((self.particle_cloth_positon[0, 0], self.particle_cloth_positon[0, 3], 
+                                    self.particle_cloth_positon[0, 7], self.particle_cloth_positon[0, 24],
+                                    self.particle_cloth_positon[0, 31], self.particle_cloth_positon[0, 32], 
+                                    self.particle_cloth_positon[0, 39], self.particle_cloth_positon[0, 56],
+                                    self.particle_cloth_positon[0, 59], self.particle_cloth_positon[0, 63]), dim = -1)
+        
         self.cloth_particle_vel = cloth_velocities[:, :]
 
-        # net contact force is not available yet
-        # self.nut_force = ...
-        # self.bolt_force = ...
-        self.cloth_com_pos = fc.translate_along_local_z(
-            pos=self.cloth_pos,
-            quat=self.cloth_quat,
-            offset=self.garment_heights,
-            device=self.device
-        )
-
-        self.cloth_com_quat = self.cloth_quat  # always equal
