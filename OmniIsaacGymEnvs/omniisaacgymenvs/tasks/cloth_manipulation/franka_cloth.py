@@ -109,8 +109,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
 
         self.frankas = FactoryFrankaView(prim_paths_expr="/World/envs/.*/franka", name="frankas_view")
         self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
-                                   name="cloth_view",
-                                   )
+                                   name="cloth_view")
         
         scene.add(self.cloth)
         # scene.add(self.deformableView)
@@ -240,7 +239,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0]
         cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1]
 
-        cloth_z_pos = self.cfg_base.env.table_height + 0.04
+        cloth_z_pos = self.cfg_base.env.table_height + 0.001
         # garment_position = torch.tensor([cloth_x_pos, cloth_y_pos, cloth_z_pos], device=self._device) 
 
         env_path = f"/World/envs/env_{idx}/garment"
@@ -248,23 +247,24 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         # cloth_path = f"/World/envs/env_{idx}" + "/garment/garment/Plane_Plane_002"
         cloth_path = env.GetPrim().GetPath().AppendChild("cloth")
 
-        plane_mesh = UsdGeom.Mesh.Define(self._stage, cloth_path)
+        self.plane_mesh = UsdGeom.Mesh.Define(self._stage, cloth_path)
         physicsUtils.set_or_add_translate_op(UsdGeom.Xformable(env), Gf.Vec3f(0, 0, 0))
 
-        self.tri_points, self.tri_indices = deformableUtils.create_triangle_mesh_square(dimx=7, dimy=7, scale=0.2)
-        plane_mesh.GetPointsAttr().Set(self.tri_points)
-        plane_mesh.GetFaceVertexIndicesAttr().Set(self.tri_indices)
-        plane_mesh.GetFaceVertexCountsAttr().Set([3] * (len(self.tri_indices) // 3))
+        self.tri_points, self.tri_indices = deformableUtils.create_triangle_mesh_square(dimx=8, dimy=8, scale=0.2)
+        self.plane_mesh.GetPointsAttr().Set(self.tri_points)
+        self.plane_mesh.GetFaceVertexIndicesAttr().Set(self.tri_indices)
+        self.plane_mesh.GetFaceVertexCountsAttr().Set([3] * (len(self.tri_indices) // 3))
 
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
-        physicsUtils.setup_transform_as_scale_orient_translate(plane_mesh)
-        physicsUtils.set_or_add_translate_op(plane_mesh, init_loc)
-        physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
+        physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
+        physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
+        # physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 15).GetQuat()) #修改cloth的oritation
 
         particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
         particle_material_path = env.GetPrim().GetPath().AppendChild("particleMaterial")
         self.particle_material = ParticleMaterial(
-            prim_path=particle_material_path, drag=0.8, lift=0.1, friction=0.8
+            prim_path=particle_material_path, drag=0.2, lift=0.9, friction=0.9
         )
 
         particle_system = ParticleSystem(
@@ -290,7 +290,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             bend_stiffness=100.0,
             shear_stiffness=100.0,
             spring_damping=0.2,
-            particle_mass=0.1,
+            particle_mass=0.02,
         )
 
         # self.create_deformable_object(idx)
@@ -384,36 +384,36 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         # self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses(clone=False)
         self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses() #对cloth来说这个坐标不会动
         self.particle_cloth_positon = self.cloth.get_world_positions()
-        self.particle_cloth_positon -= self.env_pos
+        print("self.particle_cloth_positon[0][80] = ",self.particle_cloth_positon[0][80])
+        print("00000000000000000000000000000000000000000000000000000000000000000000000 ")
+        # self.particle_cloth_positon -= self.env_pos
+        # print("self.particle_cloth_positon[0, 0] = ", self.particle_cloth_positon[0, 0])
+        # print("self.particle_cloth_positon[0, 42] = ", self.particle_cloth_positon[0, 42])
+
+        # print("self.particle_cloth_positon[0, 6] = ", self.particle_cloth_positon[0, 6])
+        # print("self.particle_cloth_positon[0, 48] = ", self.particle_cloth_positon[0, 48])
+
+        # print("self.particle_cloth_positon[0, 21] = ", self.particle_cloth_positon[0, 21])
+        # print("self.particle_cloth_positon[0, 27] = ", self.particle_cloth_positon[0, 27])
         self.cloth_pos -= self.env_pos
 
-        self.point_one_dis = self.goal_distance(self.particle_cloth_positon[0, 63], self.particle_cloth_positon[0, 7])
-        self.point_two_dis = self.goal_distance(self.particle_cloth_positon[0, 59], self.particle_cloth_positon[0, 3])
-        self.point_three_dis = self.goal_distance(self.particle_cloth_positon[0, 56], self.particle_cloth_positon[0, 0])
-
-        self.mid_point_dis = self.goal_distance(self.particle_cloth_positon[0, 32], self.particle_cloth_positon[0, 24])
-        self.mid_point_dis_two = self.goal_distance(self.particle_cloth_positon[0, 39], self.particle_cloth_positon[0, 31])
+        self.desired_goal = torch.cat((self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 0], 
+                                       self.particle_cloth_positon[0, 36], self.particle_cloth_positon[0, 44], 
+                                       self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 0]), dim = -1)
+        self.desired_goal = self.desired_goal.unsqueeze(dim=0)
         
-        self.desired_goal = torch.cat((self.particle_cloth_positon[0, 7], self.particle_cloth_positon[0, 0], 
-                                       self.particle_cloth_positon[0, 24], self.particle_cloth_positon[0, 31], 
-                                       self.particle_cloth_positon[0, 7], self.particle_cloth_positon[0, 0]), dim = -1)
-        
-
-        
-        self.constraint_dis = torch.tensor([[self.point_one_dis, self.point_two_dis, self.point_three_dis]], device = self._device)
-
         cloth_velocities = self.cloth.get_velocities(clone=False)
-        self.cloth_vel = torch.cat((cloth_velocities[0, 0], cloth_velocities[0, 3], 
-                                    cloth_velocities[0, 7], cloth_velocities[0, 24],
-                                    cloth_velocities[0, 31], cloth_velocities[0, 32], 
-                                    cloth_velocities[0, 39], cloth_velocities[0, 56],
-                                    cloth_velocities[0, 59], cloth_velocities[0, 63]), dim = -1)
-        
-        self.cloth_pos = torch.cat((self.particle_cloth_positon[0, 0], self.particle_cloth_positon[0, 3], 
-                                    self.particle_cloth_positon[0, 7], self.particle_cloth_positon[0, 24],
-                                    self.particle_cloth_positon[0, 31], self.particle_cloth_positon[0, 32], 
-                                    self.particle_cloth_positon[0, 39], self.particle_cloth_positon[0, 56],
-                                    self.particle_cloth_positon[0, 59], self.particle_cloth_positon[0, 63]), dim = -1)
+        self.keypoint_vel = torch.cat((cloth_velocities[0, 0], cloth_velocities[0, 4], 
+                                    cloth_velocities[0, 8], cloth_velocities[0, 36],
+                                    cloth_velocities[0, 44], cloth_velocities[0, 72], 
+                                    cloth_velocities[0, 76], cloth_velocities[0, 80]), dim = -1)
+        self.keypoint_vel = self.keypoint_vel.unsqueeze(dim=0)
+
+        self.keypoint_pos = torch.cat((self.particle_cloth_positon[0, 0], self.particle_cloth_positon[0, 4], 
+                                    self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 36],
+                                    self.particle_cloth_positon[0, 44], self.particle_cloth_positon[0, 72], 
+                                    self.particle_cloth_positon[0, 76], self.particle_cloth_positon[0, 80]), dim = -1)
+        self.keypoint_pos = self.keypoint_pos.unsqueeze(dim=0)
         
         self.cloth_particle_vel = cloth_velocities[:, :]
 

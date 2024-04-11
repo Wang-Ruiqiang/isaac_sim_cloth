@@ -73,7 +73,8 @@ sim:
 env:
   controlFrequencyInv: 2 # 60 hz
   numEnvs: ${resolve_default:1,${...num_envs}}
-  numObservations: 16
+  # numObservations: 16
+  numObservations: 97
   numActions: 12
 
   close_and_lift: True  # close gripper and lift after last step of episode
@@ -107,7 +108,7 @@ rl:
   keypoint_reward_scale: 1.0  # scale on keypoint-based reward
   action_penalty_scale: 0.0  # scale on action penalty
 
-  max_episode_length: 150 # 200 每一次操作的时间
+  max_episode_length: 250 # 200 每一次操作的时间
 
   success_bonus: 0.0  # bonus if nut has been lifted
 

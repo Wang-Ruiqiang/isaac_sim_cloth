@@ -201,6 +201,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         self.target_postition -= self.env_pos
         chain = self.create_panda_chain()
+
         joint_angles = self.compute_inverse_kinematics(chain)
         joint_angles = np.array(joint_angles)
         joint_goal = torch.rand([len(joint_angles), joint_angles[0].rows() + 2], device=self._device)
@@ -209,6 +210,14 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             joint_goal[i, 8] = 0.08
             for j in range(joint_angles[0].rows()):
                 joint_goal[i, j] = joint_angles[i][j]
+        
+        #通过关节角设置初始位置
+        # initial_joint_angles_array = torch.tensor([0, 0, 0, 0, 0, 0, 0, 0.08, 0.08], device = self._device)
+        # joint_goal = torch.zeros((1, 9),
+        #                            dtype=torch.float32,
+        #                            device=self._device)
+        # joint_goal = initial_joint_angles_array
+        # print("joint_goal= ", joint_goal)
                 
         self.dof_vel[env_ids] = 0.0  # shape = (num_envs, num_dofs)
         self.ctrl_target_dof_pos[env_ids] = joint_goal
@@ -220,20 +229,40 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
     
     def _reset_object(self, env_ids):
         self.cloth_positon = self.cloth.get_world_positions()
-        cloth_noise_xy = 2 * (torch.rand((self.num_envs, 2), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
-        cloth_noise_xy = cloth_noise_xy @ torch.diag(
-            torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
-        self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[env_ids, 0]
-        self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[env_ids, 1]
+        # print("self.cloth_positon[0][0] = ", self.cloth_positon[0][0])
+        # print("self.cloth_positon[0][8] = ", self.cloth_positon[0][8])
+        # print("self.cloth_positon[0][72] = ", self.cloth_positon[0][72])
+        print("self.particle_cloth_positon[0][80]0 = ", self.particle_cloth_positon[0][80])
+        print("-------------------------------------------------------------------- ")
+        # cloth_noise_xy = 2 * (torch.rand((self.num_envs, 2), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
+        # cloth_noise_xy = cloth_noise_xy @ torch.diag(
+        #     torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
+        # self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[env_ids, 0]
+        # self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[env_ids, 1]
 
-        # self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0]
-        # self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1]
-        self.cloth_pos[env_ids, 2] = self.cfg_base.env.table_height + 0.04
-        self.cloth_particle_vel[env_ids, :] = 0.0
-        indices = env_ids.to(dtype=torch.int32)
+        # # self.cloth_pos[env_ids, 0] = self.cfg_task.randomize.cloth_pos_xy_initial[0]
+        # # self.cloth_pos[env_ids, 1] = self.cfg_task.randomize.cloth_pos_xy_initial[1]
+        # self.cloth_pos[env_ids, 2] = self.cfg_base.env.table_height + 0.001
+        # self.cloth_particle_vel[env_ids, :] = 0.0
+        # indices = env_ids.to(dtype=torch.int32)
 
-        self.cloth.set_world_poses(self.cloth_pos[env_ids] + self.env_pos[env_ids], self.cloth_quat[env_ids], indices)
-        self.cloth.set_velocities(self.cloth_particle_vel[env_ids], indices)
+        # self.cloth.set_world_poses(self.cloth_pos[env_ids] + self.env_pos[env_ids], self.cloth_quat[env_ids], indices)
+        # self.cloth.set_velocities(self.cloth_particle_vel[env_ids], indices)
+
+        cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0]
+        cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1]
+
+        cloth_z_pos = self.cfg_base.env.table_height + 0.001
+        init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
+        physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
+        physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 15).GetQuat()) #修改cloth的oritation
+
+        # print("self.cloth_positon[0][0] = ", self.cloth_positon[0][0])
+        # print("self.cloth_positon[0][8] = ", self.cloth_positon[0][8])
+        # print("self.cloth_positon[0][72] = ", self.cloth_positon[0][72])
+        # print("self.particle_cloth_positon[0][80]1 = ", self.particle_cloth_positon[0][80])
+        # print("========================================================================== ")
 
         #----------------------重置deformablebody位置
         # self.deformable_position, self.deformable_orientation = self.deformableView.get_world_poses()
@@ -279,14 +308,14 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             # target_y = self.target_postition[i, 0, 1].item()
             # target_z = self.target_postition[i, 0, 2].item()
 
-            target_x = self.target_postition[i, 0].item() + 0.50 - 0.088
-            target_y = -self.target_postition[i, 1].item() - 0.098
-            target_z = self.target_postition[i, 2].item() + 0.092
+            target_x = self.target_postition[i, 0].item() + 0.50 - 0.085
+            # target_x = self.target_postition[i, 0].item() + 0.50 - 0.088
+            # target_y = -self.target_postition[i, 1].item() - 0.098
+            target_y = -self.target_postition[i, 1].item() - 0.12
+            target_z = self.target_postition[i, 2].item() + 0.095
 
             target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -0.7854),
                                         PyKDL.Vector(target_x, target_y, target_z))
-            # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0), PyKDL.Vector(0.51, -0.1460, 0.5))
-            # print ("target_frame = ", target_frame)
             # 创建起始关节角度
             initial_joint_angles = PyKDL.JntArray(7)
             initial_joint_angles_array = [0.012, -0.5697, 0, -2.8105, 0, 3.0312, 0.7853]
@@ -307,10 +336,16 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         """Apply actions from policy as position/rotation targets."""
 
         # Interpret actions as target pos displacements and set pos target
-        pos_actions = actions[:, 0:3]
+        pos_actions = actions[:, 0:3]   #增量
         if do_scale:
             pos_actions = pos_actions @ torch.diag(torch.tensor(self.cfg_task.rl.pos_action_scale, device=self.device))
+
+
+        #TODO 增加每一步或者最终位置的限制
         self.ctrl_target_fingertip_midpoint_pos = self.fingertip_midpoint_pos + pos_actions
+        # print("pos_actions = ", pos_actions)
+        # print("fingertip_midpoint_pos = ", self.fingertip_midpoint_pos)
+        # print("-------------------------------------------------------")
         # Interpret actions as target rot (axis-angle) displacements
         rot_actions = actions[:, 3:6]
         if do_scale:
@@ -447,14 +482,17 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         #                self.cloth_grasp_pos,
         #                self.cloth_grasp_quat]
 
-        achieved_goal = torch.cat((self.particle_cloth_positon[0, 63], self.particle_cloth_positon[0, 56], self.particle_cloth_positon[0, 32],
-                            self.particle_cloth_positon[0, 39], self.particle_cloth_positon[0, 7], self.particle_cloth_positon[0, 0]), 0)
-        
+        self.achieved_goal = torch.cat((self.particle_cloth_positon[0, 80], self.particle_cloth_positon[0, 72], self.particle_cloth_positon[0, 36],
+                            self.particle_cloth_positon[0, 44], self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 0]), 0)
+        self.achieved_goal = self.achieved_goal.unsqueeze(dim=0)
         obs_tensors = [self.fingertip_midpoint_pos,
                        self.fingertip_midpoint_quat,
                        self.fingertip_midpoint_linvel,
                        self.fingertip_midpoint_angvel,
-                       self.constraint_dis,]
+                       self.achieved_goal,
+                       self.desired_goal,
+                       self.keypoint_vel,
+                       self.keypoint_pos]
         
         # print("self.constraint_dis = ", self.constraint_dis)
         self.obs_buf = torch.cat(obs_tensors, dim=-1)  # shape = (num_envs, num_observations)
@@ -573,32 +611,35 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
 
 
-        achieved_oks = torch.zeros((1, 3),
+        achieved_oks = torch.zeros((1, 6),
                                    dtype=torch.float32,
                                    device=self._device)
-        achieved_distances = torch.zeros((1, 3),
+        achieved_distances = torch.zeros((1, 6),
                                    dtype=torch.float32,
                                    device=self._device)
         success_reward = 0
         fail_reward = -1
-        achieved_oks[:, 0] = self.point_one_dis < 0.05
-        achieved_oks[:, 1] = self.point_two_dis < 0.05
-        achieved_oks[:, 2] = self.point_three_dis < 0.05
-        # achieved_oks[:, 3] = point_four_dis < 0.05
-        # achieved_oks[:, 4] = point_five_dis < 0.05
-        # achieved_oks[:, 5] = point_six_dis < 0.05
 
-        achieved_distances[:, 0] = self.point_one_dis
-        achieved_distances[:, 1] = self.point_two_dis
-        achieved_distances[:, 2] = self.point_three_dis
-        # achieved_distances[:, 3] = point_four_dis
-        # achieved_distances[:, 4] = point_five_dis
-        # achieved_distances[:, 5] = point_six_dis
+        # self.point_one_dis = self.goal_distance(self.particle_cloth_positon[0, 80], self.particle_cloth_positon[0, 8])
+        # self.point_two_dis = self.goal_distance(self.particle_cloth_positon[0, 76], self.particle_cloth_positon[0, 4])
+        # self.point_three_dis = self.goal_distance(self.particle_cloth_positon[0, 72], self.particle_cloth_positon[0, 0])
+        # self.point_four_dis = self.goal_distance(self.particle_cloth_positon[0, 80], self.particle_cloth_positon[0, 8])
+        # self.point_five_dis = self.goal_distance(self.particle_cloth_positon[0, 76], self.particle_cloth_positon[0, 4])
+        # self.point_six_dis = self.goal_distance(self.particle_cloth_positon[0, 72], self.particle_cloth_positon[0, 0])
+        # self.constraint_dis = torch.tensor([[self.point_one_dis, self.point_two_dis, self.point_three_dis]], device = self._device)
+        constraint_distances = torch.tensor([0.05, 0.05, 0.05, 0.05, 0.05, 0.05], device=self._device)
+
+        for i, constraint_distance in enumerate(constraint_distances):
+            achieved_distances_per_constraint = self.goal_distance(self.achieved_goal[0][i * 3 : (i + 1)* 3], 
+                                                                   self.desired_goal[0][i * 3:(i + 1) * 3])
+            constraint_ok = achieved_distances_per_constraint < constraint_distance
+            achieved_distances[:, i] = achieved_distances_per_constraint.item()
+            achieved_oks[:, i] = constraint_ok.item()
+
         successes = torch.all(achieved_oks, axis=1)
         fails = torch.logical_not(successes)
         task_rewards = successes.float().flatten() * success_reward
-        dist_rewards = torch.sum((1 - achieved_distances/torch.tensor([0.02, 0.02, 0.02], device=self._device)),
-                                  axis=1) / 3
+        dist_rewards = torch.sum((1 - achieved_distances/constraint_distances), axis=1) / len(constraint_distances)
         
         task_rewards += dist_rewards  # Extra for being closer to the goal
         task_rewards[fails] = fail_reward
@@ -643,164 +684,164 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         return lift_success
     
 
-    def _randomize_gripper_pose(self, env_ids, sim_steps):
-        """Move gripper to random pose."""
-        # step once to update physx with the newly set joint positions from reset_franka()
-        SimulationContext.step(self._env._world, render=True)
+    # def _randomize_gripper_pose(self, env_ids, sim_steps):
+    #     """Move gripper to random pose."""
+    #     # step once to update physx with the newly set joint positions from reset_franka()
+    #     SimulationContext.step(self._env._world, render=True)
 
-        # Set target pos above table
-        self.ctrl_target_fingertip_midpoint_pos = torch.tensor([0.0, 0.0, self.cfg_base.env.table_height], device=self.device) \
-            + torch.tensor(self.cfg_task.randomize.fingertip_midpoint_pos_initial, device=self.device)
-        self.ctrl_target_fingertip_midpoint_pos = self.ctrl_target_fingertip_midpoint_pos.unsqueeze(0).repeat(self.num_envs, 1)
+    #     # Set target pos above table
+    #     self.ctrl_target_fingertip_midpoint_pos = torch.tensor([0.0, 0.0, self.cfg_base.env.table_height], device=self.device) \
+    #         + torch.tensor(self.cfg_task.randomize.fingertip_midpoint_pos_initial, device=self.device)
+    #     self.ctrl_target_fingertip_midpoint_pos = self.ctrl_target_fingertip_midpoint_pos.unsqueeze(0).repeat(self.num_envs, 1)
 
-        fingertip_midpoint_pos_noise = 2 * (torch.rand((self.num_envs, 3), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
-        fingertip_midpoint_pos_noise = fingertip_midpoint_pos_noise @ torch.diag(
-            torch.tensor(self.cfg_task.randomize.fingertip_midpoint_pos_noise,
-            device=self.device)
-        )
-        self.ctrl_target_fingertip_midpoint_pos += fingertip_midpoint_pos_noise
+    #     fingertip_midpoint_pos_noise = 2 * (torch.rand((self.num_envs, 3), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
+    #     fingertip_midpoint_pos_noise = fingertip_midpoint_pos_noise @ torch.diag(
+    #         torch.tensor(self.cfg_task.randomize.fingertip_midpoint_pos_noise,
+    #         device=self.device)
+    #     )
+    #     self.ctrl_target_fingertip_midpoint_pos += fingertip_midpoint_pos_noise
 
-        # Set target rot
-        ctrl_target_fingertip_midpoint_euler = torch.tensor(self.cfg_task.randomize.fingertip_midpoint_rot_initial,
-                                                            device=self.device).unsqueeze(0).repeat(self.num_envs, 1)
+    #     # Set target rot
+    #     ctrl_target_fingertip_midpoint_euler = torch.tensor(self.cfg_task.randomize.fingertip_midpoint_rot_initial,
+    #                                                         device=self.device).unsqueeze(0).repeat(self.num_envs, 1)
 
-        fingertip_midpoint_rot_noise = \
-            2 * (torch.rand((self.num_envs, 3), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
-        fingertip_midpoint_rot_noise = fingertip_midpoint_rot_noise @ torch.diag(
-            torch.tensor(self.cfg_task.randomize.fingertip_midpoint_rot_noise, device=self.device))
-        ctrl_target_fingertip_midpoint_euler += fingertip_midpoint_rot_noise
-        self.ctrl_target_fingertip_midpoint_quat = torch_utils.quat_from_euler_xyz(
-            ctrl_target_fingertip_midpoint_euler[:, 0],
-            ctrl_target_fingertip_midpoint_euler[:, 1],
-            ctrl_target_fingertip_midpoint_euler[:, 2]
-        )
+    #     fingertip_midpoint_rot_noise = \
+    #         2 * (torch.rand((self.num_envs, 3), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
+    #     fingertip_midpoint_rot_noise = fingertip_midpoint_rot_noise @ torch.diag(
+    #         torch.tensor(self.cfg_task.randomize.fingertip_midpoint_rot_noise, device=self.device))
+    #     ctrl_target_fingertip_midpoint_euler += fingertip_midpoint_rot_noise
+    #     self.ctrl_target_fingertip_midpoint_quat = torch_utils.quat_from_euler_xyz(
+    #         ctrl_target_fingertip_midpoint_euler[:, 0],
+    #         ctrl_target_fingertip_midpoint_euler[:, 1],
+    #         ctrl_target_fingertip_midpoint_euler[:, 2]
+    #     )
 
-        # Step sim and render
-        for _ in range(sim_steps):
-            self.refresh_base_tensors()
-            self.refresh_env_tensors()
-            self._refresh_task_tensors()
+    #     # Step sim and render
+    #     for _ in range(sim_steps):
+    #         self.refresh_base_tensors()
+    #         self.refresh_env_tensors()
+    #         self._refresh_task_tensors()
 
-            pos_error, axis_angle_error = fc.get_pose_error(
-                fingertip_midpoint_pos=self.fingertip_midpoint_pos,
-                fingertip_midpoint_quat=self.fingertip_midpoint_quat,
-                ctrl_target_fingertip_midpoint_pos=self.ctrl_target_fingertip_midpoint_pos,
-                ctrl_target_fingertip_midpoint_quat=self.ctrl_target_fingertip_midpoint_quat,
-                jacobian_type=self.cfg_ctrl['jacobian_type'],
-                rot_error_type='axis_angle'
-            )
+    #         pos_error, axis_angle_error = fc.get_pose_error(
+    #             fingertip_midpoint_pos=self.fingertip_midpoint_pos,
+    #             fingertip_midpoint_quat=self.fingertip_midpoint_quat,
+    #             ctrl_target_fingertip_midpoint_pos=self.ctrl_target_fingertip_midpoint_pos,
+    #             ctrl_target_fingertip_midpoint_quat=self.ctrl_target_fingertip_midpoint_quat,
+    #             jacobian_type=self.cfg_ctrl['jacobian_type'],
+    #             rot_error_type='axis_angle'
+    #         )
 
-            delta_hand_pose = torch.cat((pos_error, axis_angle_error), dim=-1)
-            actions = torch.zeros((self.num_envs, self.cfg_task.env.numActions), device=self.device)
-            actions[:, :6] = delta_hand_pose
+    #         delta_hand_pose = torch.cat((pos_error, axis_angle_error), dim=-1)
+    #         actions = torch.zeros((self.num_envs, self.cfg_task.env.numActions), device=self.device)
+    #         actions[:, :6] = delta_hand_pose
 
-            print("actions in _randomize_gripper_pose = ", actions)
-            self._apply_actions_as_ctrl_targets(
-                actions=actions,
-                ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
-                do_scale=False,
-            )
+    #         print("actions in _randomize_gripper_pose = ", actions)
+    #         self._apply_actions_as_ctrl_targets(
+    #             actions=actions,
+    #             ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
+    #             do_scale=False,
+    #         )
 
-            SimulationContext.step(self._env._world, render=True)
+    #         SimulationContext.step(self._env._world, render=True)
 
-        self.dof_vel[env_ids, :] = torch.zeros_like(self.dof_vel[env_ids])
+    #     self.dof_vel[env_ids, :] = torch.zeros_like(self.dof_vel[env_ids])
         
-        indices = env_ids.to(dtype=torch.int32)
-        self.frankas.set_joint_velocities(self.dof_vel[env_ids], indices=indices)
+    #     indices = env_ids.to(dtype=torch.int32)
+    #     self.frankas.set_joint_velocities(self.dof_vel[env_ids], indices=indices)
 
-        # step once to update physx with the newly set joint velocities
-        SimulationContext.step(self._env._world, render=True)
+    #     # step once to update physx with the newly set joint velocities
+    #     SimulationContext.step(self._env._world, render=True)
 
 
-    async def _randomize_gripper_pose_async(self, env_ids, sim_steps) -> None:
-        """Move gripper to random pose."""
+    # async def _randomize_gripper_pose_async(self, env_ids, sim_steps) -> None:
+    #     """Move gripper to random pose."""
 
-        # step once to update physx with the newly set joint positions from reset_franka()
-        await omni.kit.app.get_app().next_update_async()
+    #     # step once to update physx with the newly set joint positions from reset_franka()
+    #     await omni.kit.app.get_app().next_update_async()
 
-        # Set target pos above table
-        self.ctrl_target_fingertip_midpoint_pos = torch.tensor(
-            [0.0, 0.0, self.cfg_base.env.table_height], device=self.device
-        ) + torch.tensor(
-            self.cfg_task.randomize.fingertip_midpoint_pos_initial, device=self.device
-        )
-        self.ctrl_target_fingertip_midpoint_pos = (
-            self.ctrl_target_fingertip_midpoint_pos.unsqueeze(0).repeat(
-                self.num_envs, 1
-            )
-        )
+    #     # Set target pos above table
+    #     self.ctrl_target_fingertip_midpoint_pos = torch.tensor(
+    #         [0.0, 0.0, self.cfg_base.env.table_height], device=self.device
+    #     ) + torch.tensor(
+    #         self.cfg_task.randomize.fingertip_midpoint_pos_initial, device=self.device
+    #     )
+    #     self.ctrl_target_fingertip_midpoint_pos = (
+    #         self.ctrl_target_fingertip_midpoint_pos.unsqueeze(0).repeat(
+    #             self.num_envs, 1
+    #         )
+    #     )
 
-        fingertip_midpoint_pos_noise = 2 * (
-            torch.rand((self.num_envs, 3), dtype=torch.float32, device=self.device)
-            - 0.5
-        )  # [-1, 1]
-        fingertip_midpoint_pos_noise = fingertip_midpoint_pos_noise @ torch.diag(
-            torch.tensor(
-                self.cfg_task.randomize.fingertip_midpoint_pos_noise, device=self.device
-            )
-        )
-        self.ctrl_target_fingertip_midpoint_pos += fingertip_midpoint_pos_noise
+    #     fingertip_midpoint_pos_noise = 2 * (
+    #         torch.rand((self.num_envs, 3), dtype=torch.float32, device=self.device)
+    #         - 0.5
+    #     )  # [-1, 1]
+    #     fingertip_midpoint_pos_noise = fingertip_midpoint_pos_noise @ torch.diag(
+    #         torch.tensor(
+    #             self.cfg_task.randomize.fingertip_midpoint_pos_noise, device=self.device
+    #         )
+    #     )
+    #     self.ctrl_target_fingertip_midpoint_pos += fingertip_midpoint_pos_noise
 
-        # Set target rot
-        ctrl_target_fingertip_midpoint_euler = (
-            torch.tensor(
-                self.cfg_task.randomize.fingertip_midpoint_rot_initial,
-                device=self.device,
-            )
-            .unsqueeze(0)
-            .repeat(self.num_envs, 1)
-        )
-        fingertip_midpoint_rot_noise = 2 * (
-            torch.rand((self.num_envs, 3), dtype=torch.float32, device=self.device)
-            - 0.5
-        )  # [-1, 1]
-        fingertip_midpoint_rot_noise = fingertip_midpoint_rot_noise @ torch.diag(
-            torch.tensor(
-                self.cfg_task.randomize.fingertip_midpoint_rot_noise, device=self.device
-            )
-        )
-        ctrl_target_fingertip_midpoint_euler += fingertip_midpoint_rot_noise
-        self.ctrl_target_fingertip_midpoint_quat = torch_utils.quat_from_euler_xyz(
-            ctrl_target_fingertip_midpoint_euler[:, 0],
-            ctrl_target_fingertip_midpoint_euler[:, 1],
-            ctrl_target_fingertip_midpoint_euler[:, 2],
-        )
+    #     # Set target rot
+    #     ctrl_target_fingertip_midpoint_euler = (
+    #         torch.tensor(
+    #             self.cfg_task.randomize.fingertip_midpoint_rot_initial,
+    #             device=self.device,
+    #         )
+    #         .unsqueeze(0)
+    #         .repeat(self.num_envs, 1)
+    #     )
+    #     fingertip_midpoint_rot_noise = 2 * (
+    #         torch.rand((self.num_envs, 3), dtype=torch.float32, device=self.device)
+    #         - 0.5
+    #     )  # [-1, 1]
+    #     fingertip_midpoint_rot_noise = fingertip_midpoint_rot_noise @ torch.diag(
+    #         torch.tensor(
+    #             self.cfg_task.randomize.fingertip_midpoint_rot_noise, device=self.device
+    #         )
+    #     )
+    #     ctrl_target_fingertip_midpoint_euler += fingertip_midpoint_rot_noise
+    #     self.ctrl_target_fingertip_midpoint_quat = torch_utils.quat_from_euler_xyz(
+    #         ctrl_target_fingertip_midpoint_euler[:, 0],
+    #         ctrl_target_fingertip_midpoint_euler[:, 1],
+    #         ctrl_target_fingertip_midpoint_euler[:, 2],
+    #     )
 
-        # Step sim and render
-        for _ in range(sim_steps):
-            self.refresh_base_tensors()
-            self.refresh_env_tensors()
-            self._refresh_task_tensors()
+    #     # Step sim and render
+    #     for _ in range(sim_steps):
+    #         self.refresh_base_tensors()
+    #         self.refresh_env_tensors()
+    #         self._refresh_task_tensors()
 
-            pos_error, axis_angle_error = fc.get_pose_error(
-                fingertip_midpoint_pos=self.fingertip_midpoint_pos,
-                fingertip_midpoint_quat=self.fingertip_midpoint_quat,
-                ctrl_target_fingertip_midpoint_pos=self.ctrl_target_fingertip_midpoint_pos,
-                ctrl_target_fingertip_midpoint_quat=self.ctrl_target_fingertip_midpoint_quat,
-                jacobian_type=self.cfg_ctrl["jacobian_type"],
-                rot_error_type="axis_angle",
-            )
+    #         pos_error, axis_angle_error = fc.get_pose_error(
+    #             fingertip_midpoint_pos=self.fingertip_midpoint_pos,
+    #             fingertip_midpoint_quat=self.fingertip_midpoint_quat,
+    #             ctrl_target_fingertip_midpoint_pos=self.ctrl_target_fingertip_midpoint_pos,
+    #             ctrl_target_fingertip_midpoint_quat=self.ctrl_target_fingertip_midpoint_quat,
+    #             jacobian_type=self.cfg_ctrl["jacobian_type"],
+    #             rot_error_type="axis_angle",
+    #         )
 
-            delta_hand_pose = torch.cat((pos_error, axis_angle_error), dim=-1)
-            actions = torch.zeros(
-                (self.num_envs, self.cfg_task.env.numActions), device=self.device
-            )
-            actions[:, :6] = delta_hand_pose
+    #         delta_hand_pose = torch.cat((pos_error, axis_angle_error), dim=-1)
+    #         actions = torch.zeros(
+    #             (self.num_envs, self.cfg_task.env.numActions), device=self.device
+    #         )
+    #         actions[:, :6] = delta_hand_pose
 
-            self._apply_actions_as_ctrl_targets(
-                actions=actions,
-                ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
-                do_scale=False,
-            )
+    #         self._apply_actions_as_ctrl_targets(
+    #             actions=actions,
+    #             ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
+    #             do_scale=False,
+    #         )
 
-            self._env._world.physics_sim_view.flush()
-            await omni.kit.app.get_app().next_update_async()
+    #         self._env._world.physics_sim_view.flush()
+    #         await omni.kit.app.get_app().next_update_async()
 
-        self.dof_vel[env_ids, :] = torch.zeros_like(self.dof_vel[env_ids])
+    #     self.dof_vel[env_ids, :] = torch.zeros_like(self.dof_vel[env_ids])
 
-        indices = env_ids.to(dtype=torch.int32)
-        self.frankas.set_joint_velocities(self.dof_vel[env_ids], indices=indices)
+    #     indices = env_ids.to(dtype=torch.int32)
+    #     self.frankas.set_joint_velocities(self.dof_vel[env_ids], indices=indices)
 
-        # step once to update physx with the newly set joint velocities
-        self._env._world.physics_sim_view.flush()
-        await omni.kit.app.get_app().next_update_async()
+    #     # step once to update physx with the newly set joint velocities
+    #     self._env._world.physics_sim_view.flush()
+    #     await omni.kit.app.get_app().next_update_async()

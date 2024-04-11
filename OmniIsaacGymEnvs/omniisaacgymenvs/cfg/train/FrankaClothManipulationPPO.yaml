@@ -34,7 +34,7 @@ params:
   load_path: ${...checkpoint}
 
   config:
-    name: ${resolve_default:FactoryTaskNutBoltPick,${....experiment}}
+    name: ${resolve_default:FrankaClothManipulation,${....experiment}}
     full_experiment_name: ${.name}
     device: ${....rl_device}
     device_name: ${....rl_device}
@@ -51,12 +51,12 @@ params:
     normalize_advantage: True
     gamma: 0.99
     tau: 0.95
-    learning_rate: 1e-4
+    learning_rate: 3e-4
     lr_schedule: fixed
     schedule_type: standard
     kl_threshold: 0.016
     score_to_win: 20000
-    max_epochs: ${resolve_default:500,${....max_iterations}}
+    max_epochs: ${resolve_default:100,${....max_iterations}} #最大迭代次数
     save_best_after: 50
     save_frequency: 100
     print_stats: True
