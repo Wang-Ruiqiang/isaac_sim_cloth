@@ -232,8 +232,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         # print("self.cloth_positon[0][0] = ", self.cloth_positon[0][0])
         # print("self.cloth_positon[0][8] = ", self.cloth_positon[0][8])
         # print("self.cloth_positon[0][72] = ", self.cloth_positon[0][72])
-        print("self.particle_cloth_positon[0][80]0 = ", self.particle_cloth_positon[0][80])
-        print("-------------------------------------------------------------------- ")
+        # print("self.particle_cloth_positon[0][80]0 = ", self.particle_cloth_positon[0][80])
+        # print("-------------------------------------------------------------------- ")
         # cloth_noise_xy = 2 * (torch.rand((self.num_envs, 2), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
         # cloth_noise_xy = cloth_noise_xy @ torch.diag(
         #     torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
@@ -256,7 +256,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
-        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 15).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
 
         # print("self.cloth_positon[0][0] = ", self.cloth_positon[0][0])
         # print("self.cloth_positon[0][8] = ", self.cloth_positon[0][8])
@@ -308,13 +308,18 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             # target_y = self.target_postition[i, 0, 1].item()
             # target_z = self.target_postition[i, 0, 2].item()
 
-            target_x = self.target_postition[i, 0].item() + 0.50 - 0.085
-            # target_x = self.target_postition[i, 0].item() + 0.50 - 0.088
-            # target_y = -self.target_postition[i, 1].item() - 0.098
-            target_y = -self.target_postition[i, 1].item() - 0.12
+            # target_x = self.target_postition[i, 0].item() + 0.50 - 0.085
+            # target_y = -self.target_postition[i, 1].item() - 0.115
+            # target_z = self.target_postition[i, 2].item() + 0.095
+
+            target_x = self.target_postition[i, 0].item() + 0.50 - 0.09
+            target_y = -self.target_postition[i, 1].item() - 0.095
             target_z = self.target_postition[i, 2].item() + 0.095
 
-            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -0.7854),
+            # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -0.7854),
+            #                             PyKDL.Vector(target_x, target_y, target_z))
+            
+            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
                                         PyKDL.Vector(target_x, target_y, target_z))
             # 创建起始关节角度
             initial_joint_angles = PyKDL.JntArray(7)
@@ -343,9 +348,21 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         #TODO 增加每一步或者最终位置的限制
         self.ctrl_target_fingertip_midpoint_pos = self.fingertip_midpoint_pos + pos_actions
+        if self.ctrl_target_fingertip_midpoint_pos[0][0] > 0.15:
+            self.ctrl_target_fingertip_midpoint_pos[0][0] = 0.15
+
+        if self.ctrl_target_fingertip_midpoint_pos[0][1] > 0.05:
+            self.ctrl_target_fingertip_midpoint_pos[0][1] = 0.05
+        elif self.ctrl_target_fingertip_midpoint_pos[0][1] < -0.45:
+            self.ctrl_target_fingertip_midpoint_pos[0][1] = -0.45
+
+        if self.ctrl_target_fingertip_midpoint_pos[0][2] > 0.55:
+            self.ctrl_target_fingertip_midpoint_pos[0][2] = 0.55
         # print("pos_actions = ", pos_actions)
         # print("fingertip_midpoint_pos = ", self.fingertip_midpoint_pos)
-        # print("-------------------------------------------------------")
+        # print("ctrl_target_fingertip_midpoint_pos = ", self.ctrl_target_fingertip_midpoint_pos)
+        print("-------------------------------------------------------")
+        
         # Interpret actions as target rot (axis-angle) displacements
         rot_actions = actions[:, 3:6]
         if do_scale:
@@ -633,9 +650,10 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             achieved_distances_per_constraint = self.goal_distance(self.achieved_goal[0][i * 3 : (i + 1)* 3], 
                                                                    self.desired_goal[0][i * 3:(i + 1) * 3])
             constraint_ok = achieved_distances_per_constraint < constraint_distance
+            print("achieved_distances_per_constraint = ", achieved_distances_per_constraint)
             achieved_distances[:, i] = achieved_distances_per_constraint.item()
             achieved_oks[:, i] = constraint_ok.item()
-
+        
         successes = torch.all(achieved_oks, axis=1)
         fails = torch.logical_not(successes)
         task_rewards = successes.float().flatten() * success_reward
@@ -643,6 +661,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         
         task_rewards += dist_rewards  # Extra for being closer to the goal
         task_rewards[fails] = fail_reward
+        print("task_rewards= ", task_rewards)
+        print("---------------------------------------------------------------------")
         return task_rewards
     
     def _close_gripper(self, sim_steps=20):

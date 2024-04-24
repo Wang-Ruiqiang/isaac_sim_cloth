@@ -259,12 +259,12 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
         # physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
-        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 15).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
 
         particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
         particle_material_path = env.GetPrim().GetPath().AppendChild("particleMaterial")
         self.particle_material = ParticleMaterial(
-            prim_path=particle_material_path, drag=0.2, lift=0.9, friction=0.9
+            prim_path=particle_material_path, drag=0.3, lift=0.6, friction=0.9
         )
 
         particle_system = ParticleSystem(
@@ -286,6 +286,10 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             name="clothPrim" + str(idx),
             particle_system=particle_system,
             particle_material=self.particle_material,
+            # stretch_stiffness=10000.0,
+            # bend_stiffness=100.0,
+            # shear_stiffness=100.0,
+            # spring_damping=0.2,
             stretch_stiffness=10000.0,
             bend_stiffness=100.0,
             shear_stiffness=100.0,
@@ -384,8 +388,6 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         # self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses(clone=False)
         self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses() #对cloth来说这个坐标不会动
         self.particle_cloth_positon = self.cloth.get_world_positions()
-        print("self.particle_cloth_positon[0][80] = ",self.particle_cloth_positon[0][80])
-        print("00000000000000000000000000000000000000000000000000000000000000000000000 ")
         # self.particle_cloth_positon -= self.env_pos
         # print("self.particle_cloth_positon[0, 0] = ", self.particle_cloth_positon[0, 0])
         # print("self.particle_cloth_positon[0, 42] = ", self.particle_cloth_positon[0, 42])
