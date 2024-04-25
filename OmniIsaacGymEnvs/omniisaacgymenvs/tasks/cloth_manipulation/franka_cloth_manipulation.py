@@ -353,15 +353,15 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         if self.ctrl_target_fingertip_midpoint_pos[0][1] > 0.05:
             self.ctrl_target_fingertip_midpoint_pos[0][1] = 0.05
-        elif self.ctrl_target_fingertip_midpoint_pos[0][1] < -0.45:
-            self.ctrl_target_fingertip_midpoint_pos[0][1] = -0.45
+        elif self.ctrl_target_fingertip_midpoint_pos[0][1] < -0.40:
+            self.ctrl_target_fingertip_midpoint_pos[0][1] = -0.40
 
         if self.ctrl_target_fingertip_midpoint_pos[0][2] > 0.55:
             self.ctrl_target_fingertip_midpoint_pos[0][2] = 0.55
         # print("pos_actions = ", pos_actions)
         # print("fingertip_midpoint_pos = ", self.fingertip_midpoint_pos)
         # print("ctrl_target_fingertip_midpoint_pos = ", self.ctrl_target_fingertip_midpoint_pos)
-        print("-------------------------------------------------------")
+        # print("-------------------------------------------------------")
         
         # Interpret actions as target rot (axis-angle) displacements
         rot_actions = actions[:, 3:6]
@@ -650,7 +650,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             achieved_distances_per_constraint = self.goal_distance(self.achieved_goal[0][i * 3 : (i + 1)* 3], 
                                                                    self.desired_goal[0][i * 3:(i + 1) * 3])
             constraint_ok = achieved_distances_per_constraint < constraint_distance
-            print("achieved_distances_per_constraint = ", achieved_distances_per_constraint)
             achieved_distances[:, i] = achieved_distances_per_constraint.item()
             achieved_oks[:, i] = constraint_ok.item()
         
@@ -661,8 +660,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         
         task_rewards += dist_rewards  # Extra for being closer to the goal
         task_rewards[fails] = fail_reward
-        print("task_rewards= ", task_rewards)
-        print("---------------------------------------------------------------------")
         return task_rewards
     
     def _close_gripper(self, sim_steps=20):
