@@ -5,6 +5,11 @@ import os
 import torch
 import argparse
 
+import matplotlib.pyplot as plt
+
+import omni.isaac.core.utils.numpy.rotations as rot_utils
+from omni.isaac.sensor import Camera
+
 from omni.isaac.core.utils.nucleus import get_assets_root_path
 
 from omniisaacgymenvs.tasks.factory.factory_schema_class_env import FactoryABCEnv
@@ -55,6 +60,11 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.cfg_env = hydra.compose(config_name=config_path)
         self.cfg_env = self.cfg_env['task']  # strip superfluous nesting
 
+        sim_config_path = 'task/FrankaClothManipulation.yaml'
+        self.sim_cfg_env = hydra.compose(config_name=sim_config_path)
+        self.sim_cfg_env = self.sim_cfg_env['task']
+        self.rendering_dt = self.sim_cfg_env["sim"]["dt"]
+
         asset_info_path = '../tasks/cloth_manipulation/yaml/asset_info_garment.yaml'
         self.asset_info_garment = hydra.compose(config_name=asset_info_path)
         self.asset_info_garment = self.asset_info_garment['']['']['']['tasks']['cloth_manipulation']['yaml']  # strip superfluous nesting
@@ -69,6 +79,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self._import_env_assets(add_to_stage=True)
         # self.create_cone()
         # self.add_attachment()
+        self.import_camera()
         
         self.frankas = FactoryFrankaView(prim_paths_expr="/World/envs/.*/franka", name="frankas_view")
         # self.cloth = RigidPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view")
@@ -162,6 +173,17 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.garment_heights = torch.tensor(self.garment_heights, device=self._device).unsqueeze(-1)
         self.garment_widths_max = torch.tensor(self.garment_widths_max, device=self._device).unsqueeze(-1)
 
+
+    def import_camera(self):
+        camera = Camera(
+            prim_path="/World/camera",
+            position=np.array([0.0, 0.0, 15.0]),
+            frequency=1.0 / self.rendering_dt,
+            resolution=(256, 256),
+            orientation=rot_utils.euler_angles_to_quats(np.array([0, 90, 0]), degrees=True),
+        )
+        camera.initialize()
+        camera.add_motion_vectors_to_frame()
 
     def import_XFormPrim_View(self, idx):
         XFormPrim(

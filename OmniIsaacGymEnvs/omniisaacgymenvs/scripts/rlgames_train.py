@@ -93,7 +93,11 @@ def parse_hydra_configs(cfg: DictConfig):
     enable_viewport = "enable_cameras" in cfg.task.sim and cfg.task.sim.enable_cameras
 
     # select kit app file
+    print("cfg.kit_app = ", cfg.kit_app)
+    print("enable_viewport = ", enable_viewport)
+    print("enable_livestream = ", cfg.enable_livestream)
     experience = get_experience(headless, cfg.enable_livestream, enable_viewport, cfg.kit_app)
+    print("experience = ", experience)
 
     env = VecEnvRLGames(
         headless=headless,

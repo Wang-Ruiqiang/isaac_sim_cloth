@@ -41,7 +41,7 @@ sim:
   disable_contact_processing: False
 
   # set to True if you use camera sensors in the environment
-  enable_cameras: False
+  enable_cameras: True
 
   default_physics_material:
     static_friction: 1.0

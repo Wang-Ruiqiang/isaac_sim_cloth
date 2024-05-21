@@ -130,7 +130,7 @@ class CartpoleCameraTask(CartpoleTask):
                 save_image(make_grid(img, nrows = 2), 'cartpole_export.png')
 
             self.obs_buf = torch.swapaxes(images, 1, 3).clone().float()/255.0
-        else:
-            print("Image tensor is NONE!")
+        # else:
+            # print("Image tensor is NONE!")
 
         return self.obs_buf

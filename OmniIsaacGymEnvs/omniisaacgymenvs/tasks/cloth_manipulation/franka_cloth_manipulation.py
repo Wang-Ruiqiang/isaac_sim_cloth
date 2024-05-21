@@ -136,9 +136,9 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             return
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
+
         if len(env_ids) > 0:
             self.reset_idx(env_ids)
-
         self.actions = actions.clone().to(self.device)  # shape = (num_envs, num_actions); values = [-1, 1]
 
         self._apply_actions_as_ctrl_targets(
@@ -413,13 +413,13 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         if self._env._world.is_playing():
 
             # # In this policy, episode length is constant
-            # is_last_step = (self.progress_buf[0] == self.max_episode_length - 1)
+            # is_last_step = (self.progress_buf[0] >= self.max_episode_length - 1)
 
             # if self.cfg_task.env.close_and_lift:
             #     # At this point, robot has executed RL policy. Now close gripper and lift (open-loop)
-            #     if is_last_step:
-            #         self._close_gripper(sim_steps=self.cfg_task.env.num_gripper_close_sim_steps)
-            #         self._lift_gripper(sim_steps=self.cfg_task.env.num_gripper_lift_sim_steps)
+                # if is_last_step:
+                #     self._open_gripper(sim_steps=self.cfg_task.env.num_gripper_close_sim_steps)
+                #     self._lift_gripper(sim_steps=self.cfg_task.env.num_gripper_lift_sim_steps)
 
             self.refresh_base_tensors()
             self.refresh_env_tensors()
@@ -549,6 +549,9 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         self.rew_buf[:] = keypoint_reward * self.cfg_task.rl.keypoint_reward_scale \
                           - action_penalty * self.cfg_task.rl.action_penalty_scale
+        
+        if self.successes :
+            self.progress_buf[0] = self.max_episode_length - 2
 
         # # In this policy, episode length is constant across all envs
         # is_last_step = (self.progress_buf[0] == self.max_episode_length - 1)
@@ -636,6 +639,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
                                    device=self._device)
         success_reward = 0
         fail_reward = -1
+        action_penalty = 0
 
         # self.point_one_dis = self.goal_distance(self.particle_cloth_positon[0, 80], self.particle_cloth_positon[0, 8])
         # self.point_two_dis = self.goal_distance(self.particle_cloth_positon[0, 76], self.particle_cloth_positon[0, 4])
@@ -644,27 +648,47 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         # self.point_five_dis = self.goal_distance(self.particle_cloth_positon[0, 76], self.particle_cloth_positon[0, 4])
         # self.point_six_dis = self.goal_distance(self.particle_cloth_positon[0, 72], self.particle_cloth_positon[0, 0])
         # self.constraint_dis = torch.tensor([[self.point_one_dis, self.point_two_dis, self.point_three_dis]], device = self._device)
-        constraint_distances = torch.tensor([0.05, 0.05, 0.05, 0.05, 0.05, 0.05], device=self._device)
+        constraint_distances = torch.tensor([0.04, 0.02, 0.02, 0.02, 0.02, 0.02], device=self._device)
 
         for i, constraint_distance in enumerate(constraint_distances):
             achieved_distances_per_constraint = self.goal_distance(self.achieved_goal[0][i * 3 : (i + 1)* 3], 
                                                                    self.desired_goal[0][i * 3:(i + 1) * 3])
             constraint_ok = achieved_distances_per_constraint < constraint_distance
+            # print("achieved_distances_per_constraint = ", achieved_distances_per_constraint)
             achieved_distances[:, i] = achieved_distances_per_constraint.item()
             achieved_oks[:, i] = constraint_ok.item()
+            
         
-        successes = torch.all(achieved_oks, axis=1)
-        fails = torch.logical_not(successes)
-        task_rewards = successes.float().flatten() * success_reward
+        self.successes = torch.all(achieved_oks, axis=1)
+        if self.successes:
+            print("success")
+
+        fails = torch.logical_not(self.successes)
+        task_rewards = self.successes.float().flatten() * success_reward
         dist_rewards = torch.sum((1 - achieved_distances/constraint_distances), axis=1) / len(constraint_distances)
+        point_one_dis = self.goal_distance(self.particle_cloth_positon[0, 80], self.particle_cloth_positon[0, 8])
+        point_two_dis = self.goal_distance(self.particle_cloth_positon[0, 72], self.particle_cloth_positon[0, 0])
+
+        if self.particle_cloth_positon[0, 80][0] - self.particle_cloth_positon[0, 8][0] > 0.03 :
+            action_penalty += point_one_dis
+
+        if self.particle_cloth_positon[0, 72][0] - self.particle_cloth_positon[0, 0][0] > 0.03 :
+            action_penalty += point_two_dis
+
         
-        task_rewards += dist_rewards  # Extra for being closer to the goal
-        task_rewards[fails] = fail_reward
+        task_rewards += dist_rewards # Extra for being closer to the goal
+        task_rewards[fails] = fail_reward - action_penalty
+        # print("---------------------------------------------------")
         return task_rewards
     
     def _close_gripper(self, sim_steps=20):
         """Fully close gripper using controller. Called outside RL loop (i.e., after last step of episode)."""
         self._move_gripper_to_dof_pos(gripper_dof_pos=0.0, sim_steps=sim_steps)
+
+
+    def _open_gripper(self, sim_steps=20):
+        """Fully open gripper using controller. Called outside RL loop (i.e., after last step of episode)."""
+        self._move_gripper_to_dof_pos(gripper_dof_pos=0.08, sim_steps=sim_steps)
 
         
     def _move_gripper_to_dof_pos(self, gripper_dof_pos, sim_steps=20):
