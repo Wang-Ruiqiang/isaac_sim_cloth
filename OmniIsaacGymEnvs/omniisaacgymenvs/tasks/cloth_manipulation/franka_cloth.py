@@ -198,53 +198,6 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
                 self.nutboltPhysicsMaterialPath
             )
         
-    def create_cone(self):
-        # cone_path = f"/World/envs/env_{idx}" + "/cone"
-        cone_path = self.default_zero_env_path + "/cone"
-        height = 0.02
-        radius = 0.04
-        position = Gf.Vec3f(0.09, -0.01, 0.41)
-        orientation = Gf.Quatf(0.0, 0.0, 0.0, 1.0)
-        linVelocity = Gf.Vec3f(0.0, 0.0, 0.0)
-        angularVelocity = Gf.Vec3f(0.0, 0.0, 1000.0)
-        # FixedCone(
-        #     prim_path = cone_path,
-        #     name = "cone",
-        #     translation = np.array([0.0, -0.1, 0.4]),
-        #     scale = np.array([0.05, 0.05, 0.05]),
-        # )
-        # cone1Geom = UsdGeom.Cone.Define(self._stage, cone_path)
-        # cone1Prim = self._stage.GetPrimAtPath(cone_path)
-        # cone1Geom.CreateHeightAttr(height)
-        # cone1Geom.CreateRadiusAttr(radius)
-        # cone1Geom.CreateExtentAttr([(-radius, -radius, -height/2), (radius, radius, height/2)])
-        # cone1Geom.CreateAxisAttr(UsdGeom.GetStageUpAxis(self._stage))
-        # cone1Geom.AddTranslateOp().Set(position)
-        # cone1Geom.AddOrientOp().Set(orientation)
-        # cone1Geom.AddScaleOp().Set(Gf.Vec3f(1.0, 1.0, 1.0))
-        # # cone1Geom.CreateDisplayColorAttr().Set([demo.get_primary_color(1)])
-
-        # UsdPhysics.CollisionAPI.Apply(cone1Prim)
-        # physicsAPI = UsdPhysics.RigidBodyAPI.Apply(cone1Prim)
-        # physicsAPI.CreateVelocityAttr().Set(linVelocity)
-        # physicsAPI.CreateAngularVelocityAttr().Set(angularVelocity)
-        # UsdPhysics.MassAPI.Apply(cone1Prim)
-        cone0Geom = physicsUtils.create_mesh_cone(self._stage, cone_path, height, radius)
-        cone0Prim = self._stage.GetPrimAtPath(cone_path)
-        cone0Geom.AddTranslateOp().Set(position)
-        cone0Geom.AddOrientOp().Set(orientation)
-        cone0Geom.AddScaleOp().Set(Gf.Vec3f(1.0, 1.0, 1.0))
-        # cone0Geom.CreateDisplayColorAttr().Set([demo.get_primary_color(0)])
-
-        UsdPhysics.CollisionAPI.Apply(cone0Prim)
-        mesh_api = UsdPhysics.MeshCollisionAPI.Apply(cone0Prim)
-        mesh_api.CreateApproximationAttr(UsdPhysics.Tokens.convexHull)
-
-        physicsAPI = UsdPhysics.RigidBodyAPI.Apply(cone0Prim)
-        physicsAPI.CreateVelocityAttr().Set(linVelocity)
-        physicsAPI.CreateAngularVelocityAttr().Set(angularVelocity)
-        UsdPhysics.MassAPI.Apply(cone0Prim)
-        
     def import_cloth_view(self, idx):
         # radius = 0.15 * (0.6 / 5.0)
         # restOffset = radius
@@ -318,86 +271,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             spring_damping=0.2,
             particle_mass=0.02,
         )
-
-        # self.create_deformable_object(idx)
-        # self.cube = DynamicCuboid(
-        #         prim_path=cube_path, # The prim path of the cube in the USD stage
-        #         name="fancy_cube", # The unique name used to retrieve the object from the scene later on
-        #         position=np.array([0.2, 0.2, 0.5]), # Using the current stage units which is in meters by default.
-        #         # size=np.array([0.2, 0.2, 0.2]), # most arguments accept mainly numpy arrays.
-        #         size=0.2,
-        #         color=np.array([0, 0, 1.0]) # RGB channels, going from 0-1
-        #     )
-
-
-    def create_deformable_object(self, idx):
-        init_loc = Gf.Vec3f(0, 0, 0)
-        env_path = f"/World/envs/env_{idx}/deformable_object"
-        env = UsdGeom.Xform.Define(self._stage, env_path)
-        deformable_path = env.GetPrim().GetPath().AppendChild("deformable")
-        physicsUtils.set_or_add_translate_op(UsdGeom.Xformable(env), init_loc) #deformable_object 初始坐标
-
-        skin_mesh = UsdGeom.Mesh.Define(self._stage, deformable_path)
-        tri_points, tri_indices = deformableMeshUtils.createTriangleMeshCube(4)
-
-        skin_mesh.GetPointsAttr().Set(tri_points)
-        skin_mesh.GetFaceVertexIndicesAttr().Set(tri_indices)
-        skin_mesh.GetFaceVertexCountsAttr().Set([3] * (len(tri_indices) // 3))
-        physicsUtils.setup_transform_as_scale_orient_translate(skin_mesh)
-        physicsUtils.set_or_add_translate_op(skin_mesh, (0.1, 0.04, 0.4)) #基于deformable_object的deformable物体初始坐标
-        physicsUtils.set_or_add_orient_op(skin_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat())
-        deformable_material_path = env.GetPrim().GetPath().AppendChild("deformableMaterial")
-        self.deformable_material = DeformableMaterial(
-            prim_path=deformable_material_path,
-            dynamic_friction=0.5,
-            youngs_modulus=5e4,
-            poissons_ratio=0.4,
-            damping_scale=0.1,
-            elasticity_damping=0.1,
-        )
-
-        self.deformable = DeformablePrim(
-            name="deformablePrim" + str(idx),
-            prim_path=str(deformable_path),
-            # deformable_material=self.deformable_material,
-            scale = np.array([0.04, 0.04, 0.04]),
-            vertex_velocity_damping=0.0,
-            sleep_damping=10,
-            sleep_threshold=0.05,
-            settling_threshold=0.1,
-            self_collision=True,
-            self_collision_filter_distance=0.05,
-            solver_position_iteration_count=20,
-            kinematic_enabled=False,
-            simulation_hexahedral_resolution=2,
-            collision_simplification=True,
-        )
-
-
-    def add_attachment(self):
-        for i in range(32): 
-            # attachment_plane_mesh_path = f"/World/envs/env_{i}/deformable_object/attachment_gripper"
-            # attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
-            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_fingertip_centered/Cube"])
-            # # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_rightfinger/collisions/mesh_0"])
-            # attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs/env_{i}/deformable_object/deformable"])
-            # attachment_gripper = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
-            # attachment_gripper.GetDeformableVertexOverlapOffsetAttr().Set(0.4)
-
-            # attachment_plane_mesh_path = f"/World/envs/env_{i}/deformable_object/attachment_cloth"
-            # attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
-            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/garment/cloth"])
-            # attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs/env_{i}/deformable_object/deformable"])
-            # attachment_cloth = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
-            # attachment_cloth.GetDeformableVertexOverlapOffsetAttr().Set(0.1)
-
-            attachment_plane_mesh_path = f"/World/envs/env_{i}/attachment"
-            attachment_plane_mesh = PhysxSchema.PhysxPhysicsAttachment.Define(self._stage, attachment_plane_mesh_path)
-            attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/table"])
-            # attachment_plane_mesh.GetActor0Rel().SetTargets([f"/World/envs/env_{i}/franka/panda_rightfinger/collisions/mesh_0"])
-            attachment_plane_mesh.GetActor1Rel().SetTargets([f"/World/envs/env_{i}/cone"])
-            attachment_gripper = PhysxSchema.PhysxAutoAttachmentAPI.Apply(attachment_plane_mesh.GetPrim())
-            attachment_gripper.GetDeformableVertexOverlapOffsetAttr().Set(0.1)
+        
 
     def goal_distance(self, goal_a, goal_b):
         assert goal_a.shape == goal_b.shape
@@ -410,15 +284,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         # self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses(clone=False)
         self.cloth_pos, self.cloth_quat = self.cloth.get_world_poses() #对cloth来说这个坐标不会动
         self.particle_cloth_positon = self.cloth.get_world_positions()
-        # self.particle_cloth_positon -= self.env_pos
-        # print("self.particle_cloth_positon[0, 0] = ", self.particle_cloth_positon[0, 0])
-        # print("self.particle_cloth_positon[0, 42] = ", self.particle_cloth_positon[0, 42])
 
-        # print("self.particle_cloth_positon[0, 6] = ", self.particle_cloth_positon[0, 6])
-        # print("self.particle_cloth_positon[0, 48] = ", self.particle_cloth_positon[0, 48])
-
-        # print("self.particle_cloth_positon[0, 21] = ", self.particle_cloth_positon[0, 21])
-        # print("self.particle_cloth_positon[0, 27] = ", self.particle_cloth_positon[0, 27])
         self.cloth_pos -= self.env_pos
 
         self.desired_goal = torch.cat((self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 0], 
