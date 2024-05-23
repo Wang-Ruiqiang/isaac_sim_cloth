@@ -175,15 +175,32 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
 
 
     def import_camera(self):
-        camera = Camera(
+        # camera = Camera(
+        #     prim_path="/World/camera",
+        #     translation = np.array([-0.3, -0.1, 0.6]),
+        #     frequency=1.0 / self.rendering_dt,
+        #     resolution=(256, 256),
+        #     orientation=rot_utils.euler_angles_to_quats(np.array([0, -60, -90]), degrees=True),
+        # )
+        self.camera = Camera(
             prim_path="/World/camera",
-            position=np.array([0.0, 0.0, 15.0]),
+            # position = np.array([-0.3, -0.1, 0.7]),
             frequency=1.0 / self.rendering_dt,
             resolution=(256, 256),
-            orientation=rot_utils.euler_angles_to_quats(np.array([0, 90, 0]), degrees=True),
+            # orientation=rot_utils.euler_angles_to_quats(np.array([-50, -90, 0]), degrees=True),
+            # orientation=rot_utils.euler_angles_to_quats(np.array([0, 90, 50]), degrees=True),
+            # orientation=np.array([-0.29884, -0.29884, -0.64086, 0.64086]),
         )
-        camera.initialize()
-        camera.add_motion_vectors_to_frame()
+       
+        self.camera.set_world_pose(
+            position = np.array([-0.3, -0.1, 0.7]),
+            orientation=rot_utils.euler_angles_to_quats(np.array([0, -50, -90]), degrees=True, extrinsic = False),
+            camera_axes="usd",
+        )
+        self.camera.initialize()
+        self.camera.set_clipping_range(near_distance = 0.01, far_distance = 1000000)
+        self.camera.set_focal_length(1.2)
+        self.camera.add_motion_vectors_to_frame()
 
     def import_XFormPrim_View(self, idx):
         XFormPrim(
@@ -271,7 +288,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             spring_damping=0.2,
             particle_mass=0.02,
         )
-        
+
 
     def goal_distance(self, goal_a, goal_b):
         assert goal_a.shape == goal_b.shape
