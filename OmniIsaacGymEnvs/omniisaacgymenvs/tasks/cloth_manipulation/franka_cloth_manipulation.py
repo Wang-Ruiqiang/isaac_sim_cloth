@@ -33,10 +33,12 @@ python train.py task=FactoryTaskNutBoltPick
 """
 
 import asyncio
+import random
 
 import hydra
 import omni.kit
 import omegaconf
+import cv2
 import os
 import torch
 import PyKDL
@@ -53,7 +55,7 @@ from omni.isaac.core.simulation_context import SimulationContext
 from omni.physx.scripts import physicsUtils, deformableUtils
 from omni.isaac.core.utils.torch.transformations import *
 import omni.isaac.core.utils.torch as torch_utils
-from pxr import Gf, PhysxSchema, UsdGeom
+from pxr import Gf, Sdf
 
 
 from omni.isaac.core.prims.soft.cloth_prim_view import ClothPrimView
@@ -63,6 +65,9 @@ from omni.isaac.core.prims.soft.cloth_prim_view import ClothPrimView
 class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
     def __init__(self, name, sim_config, env, offset=None) -> None:
         super().__init__(name, sim_config, env)
+        self.frame_list = []
+        self.counter = 0
+        self.video_count = 0
         self._get_task_yaml_params()
     
     def _get_task_yaml_params(self):
@@ -136,6 +141,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             return
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
+        self._update_camera_view()
 
         if len(env_ids) > 0:
             self.reset_idx(env_ids)
@@ -155,6 +161,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             return
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
+        self._update_camera_view()
+
         if len(env_ids) > 0:
             await self.reset_idx_async(env_ids, randomize_gripper_pose=True)
 
@@ -172,8 +180,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         """Reset specified environments."""
         self._reset_object(env_ids)
         self._reset_franka(env_ids)
-    
-        # self._randomize_gripper_pose(env_ids, sim_steps=self.cfg_task.env.num_gripper_move_sim_steps)
 
         self._reset_buffers(env_ids)
 
@@ -181,11 +187,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         """Reset specified environments."""
         self._reset_object(env_ids)
         self._reset_franka(env_ids)
-
-        if randomize_gripper_pose:
-            await self._randomize_gripper_pose_async(
-                env_ids, sim_steps=self.cfg_task.env.num_gripper_move_sim_steps
-            )
 
         self._reset_buffers(env_ids)
 
@@ -238,6 +239,10 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
         physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
+        red_color = round(random.uniform(0, 2), 2)
+        green_color = round(random.uniform(0, 2), 2)
+        blue_color = round(random.uniform(0, 2), 2)
+        self.shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(red_color, green_color, blue_color)) 
 
     def create_panda_chain(self):
         robot = URDF.from_xml_file("/home/ruiqiang/workspace/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
@@ -325,11 +330,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         if self.ctrl_target_fingertip_midpoint_pos[0][2] > 0.55:
             self.ctrl_target_fingertip_midpoint_pos[0][2] = 0.55
-        # print("pos_actions = ", pos_actions)
-        # print("fingertip_midpoint_pos = ", self.fingertip_midpoint_pos)
-        # print("ctrl_target_fingertip_midpoint_pos = ", self.ctrl_target_fingertip_midpoint_pos)
-        # print("-------------------------------------------------------")
-        
+            
         # Interpret actions as target rot (axis-angle) displacements
         rot_actions = actions[:, 3:6]
         if do_scale:
@@ -365,6 +366,35 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self.generate_ctrl_signals()
 
 
+    def _update_camera_view(self):
+        if self.camera and self.progress_buf[:] >= 1:
+            rgba_image = self.camera.get_rgba()
+            if rgba_image is not None:
+                # 转换图像格式
+                rgb_image = rgba_image[:, :, :3]
+                bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+                self.frame_list.append(bgr_image)
+
+
+    def save_video(self, video_path, fps=30):
+        if len(self.frame_list) == 0:
+            print("No frames to save!")
+            return
+    
+        height, width, _ = self.frame_list[0].shape
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        video_writer = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
+
+        angle = random.uniform(-180, 180)  # 随机旋转角度
+        center = (width // 2, height // 2)
+        rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+        for frame in self.frame_list:
+            rotated_frame = cv2.warpAffine(frame, rotation_matrix, (width, height))
+            video_writer.write(rotated_frame)
+
+        video_writer.release()
+        print(f"Video saved at {video_path}")
+
     def _reset_buffers(self, env_ids):
         """Reset buffers."""
 
@@ -378,15 +408,14 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self.progress_buf[:] += 1
 
         if self._env._world.is_playing():
-
-            # # In this policy, episode length is constant
-            # is_last_step = (self.progress_buf[0] >= self.max_episode_length - 1)
-
-            # if self.cfg_task.env.close_and_lift:
-            #     # At this point, robot has executed RL policy. Now close gripper and lift (open-loop)
-                # if is_last_step:
-                #     self._open_gripper(sim_steps=self.cfg_task.env.num_gripper_close_sim_steps)
-                #     self._lift_gripper(sim_steps=self.cfg_task.env.num_gripper_lift_sim_steps)
+            if self.progress_buf[:] >= self.max_episode_length - 1 :
+                self.counter += 1
+                if self.counter == 20:
+                    video_path = f"../tasks/cloth_manipulation/video/camera{self.video_count}.avi"
+                    self.save_video(video_path)
+                    self.counter = 0
+                    self.video_count += 1
+                    self.frame_list.clear()
 
             self.refresh_base_tensors()
             self.refresh_env_tensors()
@@ -405,18 +434,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         self.progress_buf[:] += 1
 
         if self._env._world.is_playing():
-            # In this policy, episode length is constant
-            is_last_step = self.progress_buf[0] == self.max_episode_length - 1
-
-            if self.cfg_task.env.close_and_lift:
-                # At this point, robot has executed RL policy. Now close gripper and lift (open-loop)
-                if is_last_step:
-                    await self._close_gripper_async(
-                        sim_steps=self.cfg_task.env.num_gripper_close_sim_steps
-                    )
-                    await self._lift_gripper_async(
-                        sim_steps=self.cfg_task.env.num_gripper_lift_sim_steps
-                    )
 
             self.refresh_base_tensors()
             self.refresh_env_tensors()
@@ -457,15 +474,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
     def get_observations(self):
         """Compute observations."""
-
-        # Shallow copies of tensors
-        # obs_tensors = [self.fingertip_midpoint_pos,
-        #                self.fingertip_midpoint_quat,
-        #                self.fingertip_midpoint_linvel,
-        #                self.fingertip_midpoint_angvel,
-        #                self.cloth_grasp_pos,
-        #                self.cloth_grasp_quat]
-
         self.achieved_goal = torch.cat((self.particle_cloth_positon[0, 80], self.particle_cloth_positon[0, 72], self.particle_cloth_positon[0, 36],
                             self.particle_cloth_positon[0, 44], self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 0]), 0)
         self.achieved_goal = self.achieved_goal.unsqueeze(dim=0)
@@ -518,7 +526,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
                           - action_penalty * self.cfg_task.rl.action_penalty_scale
         
         if self.successes :
-            self.progress_buf[0] = self.max_episode_length - 2
+            # self.progress_buf[0] = self.max_episode_length - 2
+            self.progress_buf[0] = self.max_episode_length - 1
 
         # # In this policy, episode length is constant across all envs
         # is_last_step = (self.progress_buf[0] == self.max_episode_length - 1)

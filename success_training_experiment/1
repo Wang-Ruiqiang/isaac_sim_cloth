@@ -1,0 +1,58 @@
+
+
+“env_path = f"/World/envs/env_{idx}/garment"
+        env = UsdGeom.Xform.Define(self._stage, env_path)
+        # cloth_path = f"/World/envs/env_{idx}" + "/garment/garment/Plane_Plane_002"
+        cloth_path = env.GetPrim().GetPath().AppendChild("cloth")
+
+        self.plane_mesh = UsdGeom.Mesh.Define(self._stage, cloth_path)
+        physicsUtils.set_or_add_translate_op(UsdGeom.Xformable(env), Gf.Vec3f(0, 0, 0))
+
+        self.tri_points, self.tri_indices = deformableUtils.create_triangle_mesh_square(dimx=8, dimy=8, scale=0.2)
+        self.plane_mesh.GetPointsAttr().Set(self.tri_points)
+        self.plane_mesh.GetFaceVertexIndicesAttr().Set(self.tri_indices)
+        self.plane_mesh.GetFaceVertexCountsAttr().Set([3] * (len(self.tri_indices) // 3))
+
+        init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
+        physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
+        physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
+        # physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
+
+
+
+        particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
+        particle_material_path = env.GetPrim().GetPath().AppendChild("particleMaterial")
+        self.particle_material = ParticleMaterial(
+            prim_path=particle_material_path, drag=0.3, lift=0.6, friction=0.9
+        )
+
+        particle_system = ParticleSystem(
+            particle_system_enabled = True,
+            prim_path=particle_system_path,
+            simulation_owner=self._env._world.get_physics_context().prim_path,
+            rest_offset=0.005 * 0.99,
+            contact_offset=0.005,
+            solid_rest_offset=0.005 * 0.99,
+            fluid_rest_offset=0.005 * 0.6 * 0.99,
+            particle_contact_offset=0.005,
+            max_neighborhood = 96,
+            solver_position_iteration_count = 16,
+            global_self_collision_enabled = True,
+            non_particle_collision_enabled = True,
+        )
+        self.cloth1 = ClothPrim(
+            prim_path=str(cloth_path),
+            name="clothPrim" + str(idx),
+            particle_system=particle_system,
+            particle_material=self.particle_material,
+            # stretch_stiffness=10000.0,
+            # bend_stiffness=100.0,
+            # shear_stiffness=100.0,
+            # spring_damping=0.2,
+            stretch_stiffness=10000.0,
+            bend_stiffness=100.0,
+            shear_stiffness=100.0,
+            spring_damping=0.2,
+            particle_mass=0.02,
+        )” 给self.plane_mesh 添加颜色

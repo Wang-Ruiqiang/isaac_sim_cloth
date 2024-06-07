@@ -41,7 +41,7 @@ from omni.isaac.core.objects import DynamicCuboid, DynamicCone, FixedCone
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
 from omniisaacgymenvs.robots.articulations.views.factory_franka_view import FactoryFrankaView
 
-from pxr import Gf, UsdGeom, PhysxSchema, UsdPhysics
+from pxr import Usd, Gf, UsdGeom, Sdf, UsdShade
 import omni.kit.commands
 from omni.physx.scripts import utils, physicsUtils
 
@@ -64,6 +64,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.sim_cfg_env = hydra.compose(config_name=sim_config_path)
         self.sim_cfg_env = self.sim_cfg_env['task']
         self.rendering_dt = self.sim_cfg_env["sim"]["dt"]
+        self.fps = 1.0 / self.rendering_dt
 
         asset_info_path = '../tasks/cloth_manipulation/yaml/asset_info_garment.yaml'
         self.asset_info_garment = hydra.compose(config_name=asset_info_path)
@@ -175,32 +176,34 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
 
 
     def import_camera(self):
-        # camera = Camera(
-        #     prim_path="/World/camera",
-        #     translation = np.array([-0.3, -0.1, 0.6]),
-        #     frequency=1.0 / self.rendering_dt,
-        #     resolution=(256, 256),
-        #     orientation=rot_utils.euler_angles_to_quats(np.array([0, -60, -90]), degrees=True),
-        # )
         self.camera = Camera(
             prim_path="/World/camera",
-            # position = np.array([-0.3, -0.1, 0.7]),
-            frequency=1.0 / self.rendering_dt,
-            resolution=(256, 256),
-            # orientation=rot_utils.euler_angles_to_quats(np.array([-50, -90, 0]), degrees=True),
-            # orientation=rot_utils.euler_angles_to_quats(np.array([0, 90, 50]), degrees=True),
-            # orientation=np.array([-0.29884, -0.29884, -0.64086, 0.64086]),
+            frequency=self.fps,
+            resolution=(1600, 900),
         )
        
+        # self.camera.set_world_pose(
+        #     position = np.array([-0.3, -0.1, 0.7]),
+        #     orientation=rot_utils.euler_angles_to_quats(np.array([0, -50, -90]), degrees=True, extrinsic = False),
+        #     camera_axes="usd",
+        # )
+
+        # self.camera.set_world_pose(
+        #     position = np.array([0.0, -0.6, 0.7]),
+        #     orientation=rot_utils.euler_angles_to_quats(np.array([60, 0, 0]), degrees=True, extrinsic = False),
+        #     camera_axes="usd",
+        # )
+
         self.camera.set_world_pose(
-            position = np.array([-0.3, -0.1, 0.7]),
-            orientation=rot_utils.euler_angles_to_quats(np.array([0, -50, -90]), degrees=True, extrinsic = False),
+            position = np.array([-0.3, -0.3, 0.6]),
+            orientation=rot_utils.euler_angles_to_quats(np.array([30, -50, -60]), degrees=True, extrinsic = False),
             camera_axes="usd",
         )
         self.camera.initialize()
         self.camera.set_clipping_range(near_distance = 0.01, far_distance = 1000000)
         self.camera.set_focal_length(1.2)
         self.camera.add_motion_vectors_to_frame()
+
 
     def import_XFormPrim_View(self, idx):
         XFormPrim(
@@ -250,8 +253,21 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
-        # physicsUtils.set_or_add_orient_op(plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
         physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
+
+        # Define the material
+        material_path = env.GetPrim().GetPath().AppendChild("clothMaterial")
+        material = UsdShade.Material.Define(self._stage, material_path)
+        shader_path = material_path.AppendChild("PBRShader")
+        self.shader = UsdShade.Shader.Define(self._stage, shader_path)
+        self.shader.CreateIdAttr("UsdPreviewSurface")
+
+        # Set shader attributes for base color
+        self.shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(0, 0, 0.5))    #设置布料颜色
+        material.CreateSurfaceOutput().ConnectToSource(self.shader.ConnectableAPI(), "surface")
+
+        # Bind the material to the mesh
+        UsdShade.MaterialBindingAPI(self.plane_mesh.GetPrim()).Bind(material)
 
         particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
         particle_material_path = env.GetPrim().GetPath().AppendChild("particleMaterial")

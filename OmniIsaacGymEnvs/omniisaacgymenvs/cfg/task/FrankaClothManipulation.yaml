@@ -9,8 +9,8 @@ physics_engine: ${..physics_engine}
 
 sim:
   use_gpu_pipeline: ${eq:${...pipeline},"gpu"}
-  dt: 0.00833333333 #0.016667  # required, but overridden in FactoryBase.yaml
-  gravity: [0.0, 0.0, -9.81]  # required, but overridden in base FactoryBase.yaml
+  dt: 0.00833333333 # required
+  gravity: [0.0, 0.0, -9.81]  # required
   disable_gravity: False
   add_ground_plane: True
   add_distant_light: True
@@ -71,7 +71,7 @@ sim:
   
 
 env:
-  controlFrequencyInv: 2 # 60 hz
+  controlFrequencyInv: 2 #每个dt走2步，频率为2/dt
   numEnvs: ${resolve_default:1,${...num_envs}}
   # numObservations: 16
   numObservations: 97
@@ -108,7 +108,7 @@ rl:
   keypoint_reward_scale: 1.0  # scale on keypoint-based reward
   action_penalty_scale: 0.0  # scale on action penalty
 
-  max_episode_length: 150 # 200 每一次操作的时间
+  max_episode_length: 80 # 200 每一次操作的时间
 
   success_bonus: 0.0  # bonus if nut has been lifted
 
