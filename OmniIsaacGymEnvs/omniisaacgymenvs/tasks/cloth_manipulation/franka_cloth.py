@@ -181,6 +181,12 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             frequency=self.fps,
             resolution=(1600, 900),
         )
+
+        self.camera2 = Camera(
+            prim_path="/World/camera2",
+            frequency=self.fps,
+            resolution=(1600, 900),
+        )
        
         # self.camera.set_world_pose(
         #     position = np.array([-0.3, -0.1, 0.7]),
@@ -188,11 +194,12 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         #     camera_axes="usd",
         # )
 
-        # self.camera.set_world_pose(
-        #     position = np.array([0.0, -0.6, 0.7]),
-        #     orientation=rot_utils.euler_angles_to_quats(np.array([60, 0, 0]), degrees=True, extrinsic = False),
-        #     camera_axes="usd",
-        # )
+        #--------------------双相机位置---------------------------
+        self.camera2.set_world_pose(
+            position = np.array([0.0, -0.6, 0.7]),
+            orientation=rot_utils.euler_angles_to_quats(np.array([60, 0, 0]), degrees=True, extrinsic = False),
+            camera_axes="usd",
+        )
 
         self.camera.set_world_pose(
             position = np.array([-0.3, -0.3, 0.6]),
@@ -203,6 +210,11 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.camera.set_clipping_range(near_distance = 0.01, far_distance = 1000000)
         self.camera.set_focal_length(1.2)
         self.camera.add_motion_vectors_to_frame()
+
+        self.camera2.initialize()
+        self.camera2.set_clipping_range(near_distance = 0.01, far_distance = 1000000)
+        self.camera2.set_focal_length(1.2)
+        self.camera2.add_motion_vectors_to_frame()
 
 
     def import_XFormPrim_View(self, idx):

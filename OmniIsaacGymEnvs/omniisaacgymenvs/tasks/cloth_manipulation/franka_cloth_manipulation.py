@@ -141,7 +141,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             return
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
-        self._update_camera_view()
+        # self._update_camera_view()
 
         if len(env_ids) > 0:
             self.reset_idx(env_ids)
@@ -161,7 +161,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             return
 
         env_ids = self.reset_buf.nonzero(as_tuple=False).squeeze(-1)
-        self._update_camera_view()
+        # self._update_camera_view()
 
         if len(env_ids) > 0:
             await self.reset_idx_async(env_ids, randomize_gripper_pose=True)
@@ -385,12 +385,12 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         video_writer = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
 
-        angle = random.uniform(-180, 180)  # 随机旋转角度
-        center = (width // 2, height // 2)
-        rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+        # angle = random.uniform(-180, 180)  # 随机旋转角度
+        # center = (width // 2, height // 2)
+        # rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
         for frame in self.frame_list:
-            rotated_frame = cv2.warpAffine(frame, rotation_matrix, (width, height))
-            video_writer.write(rotated_frame)
+            # rotated_frame = cv2.warpAffine(frame, rotation_matrix, (width, height))
+            video_writer.write(frame)
 
         video_writer.release()
         print(f"Video saved at {video_path}")
@@ -412,7 +412,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
                 self.counter += 1
                 if self.counter == 20:
                     video_path = f"../tasks/cloth_manipulation/video/camera{self.video_count}.avi"
-                    self.save_video(video_path)
+                    # self.save_video(video_path)
                     self.counter = 0
                     self.video_count += 1
                     self.frame_list.clear()
