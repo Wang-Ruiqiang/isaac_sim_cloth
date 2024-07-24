@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import omni.isaac.core.utils.numpy.rotations as rot_utils
 from omni.isaac.sensor import Camera
 
-from omni.isaac.core.utils.nucleus import get_assets_root_path
 
 from omniisaacgymenvs.tasks.factory.factory_schema_class_env import FactoryABCEnv
 from omniisaacgymenvs.tasks.factory.factory_schema_config_env import FactorySchemaConfigEnv
@@ -18,25 +17,22 @@ from omniisaacgymenvs.tasks.factory.factory_base import FactoryBase
 
 
 from omniisaacgymenvs.robots.articulations.franka import Franka
-from omni.isaac.core.utils.prims import get_prim_at_path
+import omni.isaac.core.utils.prims as prim_utils
+from omni.isaac.core.utils.prims import create_prim
 from omniisaacgymenvs.robots.articulations.views.franka_view import FrankaView
 
 import omniisaacgymenvs.tasks.factory.factory_control as fc
 import omni.isaac.core.utils.torch as torch_utils
 import omni.isaac.core.utils.deformable_mesh_utils as deformableMeshUtils
+from omni.isaac.core.utils.stage import add_reference_to_stage
 
 from omni.physx.scripts import physicsUtils, deformableUtils
-from omni.isaac.core.materials.deformable_material import DeformableMaterial
-from omni.isaac.core.prims.soft.deformable_prim import DeformablePrim
-from omni.isaac.core.prims.soft.deformable_prim_view import DeformablePrimView
 from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.prims.soft.particle_system import ParticleSystem
 from omni.isaac.core.prims.soft.cloth_prim import ClothPrim
 from omni.isaac.core.prims.soft.cloth_prim_view import ClothPrimView
-from omni.isaac.core.prims.rigid_prim_view import RigidPrimView
 from omni.isaac.core.materials import ParticleMaterial
 from omni.isaac.core.utils.torch.transformations import *
-from omni.isaac.core.objects import DynamicCuboid, DynamicCone, FixedCone
 
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
 from omniisaacgymenvs.robots.articulations.views.factory_franka_view import FactoryFrankaView
@@ -80,6 +76,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self._import_env_assets(add_to_stage=True)
         # self.create_cone()
         # self.add_attachment()
+        # self.chessboard_view_for_calibration()
         self.import_camera()
         
         self.frankas = FactoryFrankaView(prim_paths_expr="/World/envs/.*/franka", name="frankas_view")
@@ -265,7 +262,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
-        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 5).GetQuat()) #修改cloth的oritation
 
         # Define the material
         material_path = env.GetPrim().GetPath().AppendChild("clothMaterial")
@@ -316,6 +313,36 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             spring_damping=0.2,
             particle_mass=0.02,
         )
+
+
+    def chessboard_view_for_calibration(self):
+        chessboard_usd_path = "../tasks/cloth_manipulation/mesh/chessboard.usd"
+        material_path = "/World/Chessboard/Looks/OmniPBR/Shader"
+        texture_path = "../tasks/cloth_manipulation/mesh/checkerboard.png"
+
+        # 创建一个Prim并添加USD参考
+        chessboard_prim_path = "/World/Chessboard"
+        create_prim(chessboard_prim_path)
+        add_reference_to_stage(chessboard_usd_path, chessboard_prim_path)
+
+        # 获取Shader
+        shader_prim = self._stage.GetPrimAtPath(material_path)
+        shader = UsdShade.Shader(shader_prim)
+
+        # 更新Albedo Map的纹理路径
+        albedo_input = shader.GetInput("diffuse_texture")
+        albedo_input.Set(Sdf.AssetPath(texture_path))
+
+        # 获取棋盘格Prim
+        chessboard_prim = self._stage.GetPrimAtPath(chessboard_prim_path)
+        chessboard_xform = UsdGeom.Xformable(chessboard_prim)
+        translate_op = chessboard_xform.GetOrderedXformOps()[0]
+        translate_op.Set(Gf.Vec3f(0.0, 0.0, 0.6))
+        rotate_op = chessboard_xform.GetOrderedXformOps()[1]
+        rotate_op.Set(Gf.Quatd(1.0, Gf.Vec3d(0, 0.0, 0.0)))
+        scale_op = chessboard_xform.GetOrderedXformOps()[2]
+        scale_op.Set(Gf.Vec3f(0.2, 0.2, 0.2))
+
 
 
     def goal_distance(self, goal_a, goal_b):

@@ -66,6 +66,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
     def __init__(self, name, sim_config, env, offset=None) -> None:
         super().__init__(name, sim_config, env)
         self.frame_list = []
+        self.frame_list2 = []
         self.counter = 0
         self.video_count = 0
         self._get_task_yaml_params()
@@ -218,7 +219,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         #                            dtype=torch.float32,
         #                            device=self._device)
         # joint_goal = initial_joint_angles_array
-        # print("joint_goal= ", joint_goal)
                 
         self.dof_vel[env_ids] = 0.0  # shape = (num_envs, num_dofs)
         self.ctrl_target_dof_pos[env_ids] = joint_goal
@@ -238,7 +238,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
-        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 20).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 5).GetQuat()) #修改cloth的oritation
         red_color = round(random.uniform(0, 2), 2)
         green_color = round(random.uniform(0, 2), 2)
         blue_color = round(random.uniform(0, 2), 2)
@@ -279,14 +279,20 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             # target_x = self.target_postition[i, 0, 0].item()
             # target_y = self.target_postition[i, 0, 1].item()
             # target_z = self.target_postition[i, 0, 2].item()
+            
+            target_x = self.target_postition[i, 0].item() + 0.50 - 0.12
+            target_y = -self.target_postition[i, 1].item() - 0.102
+            target_z = self.target_postition[i, 2].item() + 0.097
 
-            # target_x = self.target_postition[i, 0].item() + 0.50 - 0.085
-            # target_y = -self.target_postition[i, 1].item() - 0.115
+            # 效果比较好的结果
+            # target_x = self.target_postition[i, 0].item() + 0.50 - 0.12
+            # target_y = -self.target_postition[i, 1].item() - 0.105
+            # target_z = self.target_postition[i, 2].item() + 0.097
+
+            # 最初的结果
+            # target_x = self.target_postition[i, 0].item() + 0.50 - 0.09
+            # target_y = -self.target_postition[i, 1].item() - 0.095
             # target_z = self.target_postition[i, 2].item() + 0.095
-
-            target_x = self.target_postition[i, 0].item() + 0.50 - 0.09
-            target_y = -self.target_postition[i, 1].item() - 0.095
-            target_z = self.target_postition[i, 2].item() + 0.095
 
             # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -0.7854),
             #                             PyKDL.Vector(target_x, target_y, target_z))
@@ -318,7 +324,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             pos_actions = pos_actions @ torch.diag(torch.tensor(self.cfg_task.rl.pos_action_scale, device=self.device))
 
 
-        #TODO 增加每一步或者最终位置的限制
+        # 增加每一步或者最终位置的限制
         self.ctrl_target_fingertip_midpoint_pos = self.fingertip_midpoint_pos + pos_actions
         if self.ctrl_target_fingertip_midpoint_pos[0][0] > 0.15:
             self.ctrl_target_fingertip_midpoint_pos[0][0] = 0.15
@@ -375,22 +381,30 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
                 bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
                 self.frame_list.append(bgr_image)
 
+            if self.camera2 and self.progress_buf[:] >= 1:
+                rgba_image = self.camera2.get_rgba()
+                if rgba_image is not None:
+                    # 转换图像格式
+                    rgb_image = rgba_image[:, :, :3]
+                    bgr_image = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+                    self.frame_list2.append(bgr_image)
 
-    def save_video(self, video_path, fps=30):
-        if len(self.frame_list) == 0:
+
+    def _save_video(self, video_path, frames, fps=30):
+        if len(frames) == 0:
             print("No frames to save!")
             return
     
-        height, width, _ = self.frame_list[0].shape
+        height, width, _ = frames[0].shape
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         video_writer = cv2.VideoWriter(video_path, fourcc, fps, (width, height))
 
-        # angle = random.uniform(-180, 180)  # 随机旋转角度
-        # center = (width // 2, height // 2)
-        # rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
-        for frame in self.frame_list:
-            # rotated_frame = cv2.warpAffine(frame, rotation_matrix, (width, height))
-            video_writer.write(frame)
+        angle = random.uniform(-180, 180)  # 随机旋转角度
+        center = (width // 2, height // 2)
+        rotation_matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
+        for frame in frames:
+            rotated_frame = cv2.warpAffine(frame, rotation_matrix, (width, height))
+            video_writer.write(rotated_frame)
 
         video_writer.release()
         print(f"Video saved at {video_path}")
@@ -410,12 +424,15 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         if self._env._world.is_playing():
             if self.progress_buf[:] >= self.max_episode_length - 1 :
                 self.counter += 1
-                if self.counter == 20:
-                    video_path = f"../tasks/cloth_manipulation/video/camera{self.video_count}.avi"
-                    # self.save_video(video_path)
+                if self.counter == 10:
+                    video_path = f"../tasks/cloth_manipulation/video/camera-1-{self.video_count}.avi"
+                    video_path2 = f"../tasks/cloth_manipulation/video2/camera-2-{self.video_count}.avi"
+                    # self._save_video(video_path, self.frame_list)
+                    # self._save_video(video_path2, self.frame_list2)
                     self.counter = 0
                     self.video_count += 1
                     self.frame_list.clear()
+                    self.frame_list2.clear()
 
             self.refresh_base_tensors()
             self.refresh_env_tensors()
@@ -476,6 +493,10 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         """Compute observations."""
         self.achieved_goal = torch.cat((self.particle_cloth_positon[0, 80], self.particle_cloth_positon[0, 72], self.particle_cloth_positon[0, 36],
                             self.particle_cloth_positon[0, 44], self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 0]), 0)
+        # print("self.particle_cloth_positon[0, 0] = ", self.particle_cloth_positon[0, 0])
+        # print("self.particle_cloth_positon[0, 8] = ", self.particle_cloth_positon[0, 8])
+        # print("self.particle_cloth_positon[0, 72] = ", self.particle_cloth_positon[0, 72])
+        # print("self.particle_cloth_positon[0, 80] = ", self.particle_cloth_positon[0, 80])
         self.achieved_goal = self.achieved_goal.unsqueeze(dim=0)
         obs_tensors = [self.fingertip_midpoint_pos,
                        self.fingertip_midpoint_quat,
@@ -560,7 +581,8 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         fail_reward = -1
         action_penalty = 0
 
-        constraint_distances = torch.tensor([0.04, 0.02, 0.02, 0.02, 0.02, 0.02], device=self._device)
+        # constraint_distances = torch.tensor([0.04, 0.02, 0.02, 0.02, 0.02, 0.02], device=self._device)
+        constraint_distances = torch.tensor([0.015, 0.01, 0.01, 0.01, 0.01, 0.01], device=self._device)
 
         for i, constraint_distance in enumerate(constraint_distances):
             achieved_distances_per_constraint = self.goal_distance(self.achieved_goal[0][i * 3 : (i + 1)* 3], 
@@ -590,48 +612,4 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         
         task_rewards += dist_rewards # Extra for being closer to the goal
         task_rewards[fails] = fail_reward - action_penalty
-        # print("---------------------------------------------------")
         return task_rewards
-    
-    def _close_gripper(self, sim_steps=20):
-        """Fully close gripper using controller. Called outside RL loop (i.e., after last step of episode)."""
-        self._move_gripper_to_dof_pos(gripper_dof_pos=0.0, sim_steps=sim_steps)
-
-
-    def _open_gripper(self, sim_steps=20):
-        """Fully open gripper using controller. Called outside RL loop (i.e., after last step of episode)."""
-        self._move_gripper_to_dof_pos(gripper_dof_pos=0.08, sim_steps=sim_steps)
-
-        
-    def _move_gripper_to_dof_pos(self, gripper_dof_pos, sim_steps=20):
-        """Move gripper fingers to specified DOF position using controller."""
-
-        delta_hand_pose = torch.zeros((self.num_envs, self.cfg_task.env.numActions), device=self.device)  # No hand motion
-        self._apply_actions_as_ctrl_targets(delta_hand_pose, gripper_dof_pos, do_scale=False)
-        
-        # Step sim
-        for _ in range(sim_steps):
-            SimulationContext.step(self._env._world, render=True)
-
-    
-    def _lift_gripper(self, franka_gripper_width=0.0, lift_distance=0.3, sim_steps=20):
-        """Lift gripper by specified distance. Called outside RL loop (i.e., after last step of episode)."""
-
-        delta_hand_pose = torch.zeros([self.num_envs, 6], device=self.device)
-        delta_hand_pose[:, 2] = lift_distance
-
-        # Step sim
-        for _ in range(sim_steps):
-            self._apply_actions_as_ctrl_targets(delta_hand_pose, franka_gripper_width, do_scale=False)
-            SimulationContext.step(self._env._world, render=True)
-
-
-    def _check_lift_success(self, height_multiple):
-        """Check if nut is above table by more than specified multiple times height of nut."""
-
-        lift_success = torch.where(
-            self.cloth_pos[:, 2] > self.cfg_base.env.table_height + self.garment_heights.squeeze(-1) * height_multiple,
-            torch.ones((self.num_envs,), device=self.device),
-            torch.zeros((self.num_envs,), device=self.device))
-
-        return lift_success
