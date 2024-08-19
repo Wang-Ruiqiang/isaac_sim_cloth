@@ -15,7 +15,7 @@ def create_panda_chain():
     # for i in range(7):
     #     chain.addSegment(PyKDL.Segment(PyKDL.Joint(PyKDL.Joint.RotZ), PyKDL.Frame(PyKDL.Rotation.RotZ(theta[i]) * PyKDL.Rotation.RotX(alpha[i]), PyKDL.Vector(a[i], -d[i] * math.sin(alpha[i]), d[i] * math.cos(alpha[i])) )))
     # return chain
-    robot = URDF.from_xml_file("/home/ruiqiang/workspace/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
+    robot = URDF.from_xml_file("/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
     tree = kdl_tree_from_urdf_model(robot)
     chain = tree.getChain("panda_link0", "panda_link8")
     return chain

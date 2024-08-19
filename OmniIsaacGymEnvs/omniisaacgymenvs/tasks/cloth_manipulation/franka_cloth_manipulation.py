@@ -48,7 +48,6 @@ from omniisaacgymenvs.tasks.factory.factory_schema_class_task import FactoryABCT
 from omniisaacgymenvs.tasks.cloth_manipulation.franka_cloth import FrankaCloth
 from omniisaacgymenvs.tasks.factory.factory_schema_config_task import FactorySchemaConfigTask
 import omniisaacgymenvs.tasks.factory.factory_control as fc
-from omni.isaac.robot_assembler import RobotAssembler,AssembledRobot
 
 from omni.isaac.core.simulation_context import SimulationContext
 from omni.physx.scripts import physicsUtils, deformableUtils
@@ -283,7 +282,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
 
     def create_panda_chain(self):
-        robot = URDF.from_xml_file("/home/ruiqiang/workspace/omniverse_gym/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
+        robot = URDF.from_xml_file("/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
         tree = kdl_tree_from_urdf_model(robot)
         chain = tree.getChain("panda_link0", "panda_link8")
         return chain
