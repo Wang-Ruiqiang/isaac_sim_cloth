@@ -45,11 +45,12 @@ class VecEnvRLGames(VecEnvBase):
 
     def set_task(self, task, backend="numpy", sim_params=None, init_sim=True, rendering_dt=1.0 / 60.0) -> None:
         super().set_task(task, backend, sim_params, init_sim, rendering_dt)
-
         self.num_states = self._task.num_states
         self.state_space = self._task.state_space
 
     def step(self, actions):
+
+        # print("----------------start----------------------")
         if self._task.randomize_actions:
             actions = self._task._dr_randomizer.apply_actions_randomization(
                 actions=actions, reset_buf=self._task.reset_buf
@@ -80,8 +81,11 @@ class VecEnvRLGames(VecEnvBase):
         self._process_data()
 
         obs_dict = {"obs": self._obs, "states": self._states}
+        # print("----------------end----------------------")
 
         return obs_dict, self._rew, self._resets, self._extras
+    
+        
 
     def reset(self, seed=None, options=None):
         """Resets the task and applies default zero actions to recompute observations and states."""

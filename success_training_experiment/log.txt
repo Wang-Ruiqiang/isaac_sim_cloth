@@ -1,0 +1,362 @@
+current_position =  tensor([[ 0.1200, -0.0100,  0.4300]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1174,  0.0648,  0.4129, -0.1036,  0.0507,  0.4254, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0671, -0.1348,  0.4000, -0.0842,
+         -0.1451,  0.4139]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0671, -0.1348,  0.4000, -0.0842, -0.1451,  0.4139, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0671, -0.1348,  0.4000, -0.0842,
+         -0.1451,  0.4139]], device='cuda:0')
+pos_actions =  tensor([[-0.0080, -0.0100,  0.0069]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0309, -0.0123,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066980292897249, y=0.7070959764043661, z=0.017216672299602387, w=0.01722677409451233)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+
+
+current_position =  tensor([[0.1200, 0.0822, 0.4006]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.0897,  0.0799,  0.4296, -0.1189,  0.0727,  0.4416, -0.1181, -0.0264,
+          0.4357,  0.0766, -0.0125,  0.4236,  0.0375, -0.1192,  0.4000, -0.1189,
+         -0.1258,  0.4310]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0375, -0.1192,  0.4000, -0.1189, -0.1258,  0.4310, -0.1181, -0.0264,
+          0.4357,  0.0766, -0.0125,  0.4236,  0.0375, -0.1192,  0.4000, -0.1189,
+         -0.1258,  0.4310]], device='cuda:0')
+         
+         
+         current_position =  tensor([[0.1200, 0.0500, 0.4300]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.0855,  0.0488,  0.4340, -0.1236,  0.0365,  0.4468, -0.1126, -0.0619,
+          0.4383,  0.0859, -0.0418,  0.4244,  0.1001, -0.1455,  0.4006, -0.1036,
+         -0.1608,  0.4324]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.1001, -0.1455,  0.4006, -0.1036, -0.1608,  0.4324, -0.1126, -0.0619,
+          0.4383,  0.0859, -0.0418,  0.4244,  0.1001, -0.1455,  0.4006, -0.1036,
+         -0.1608,  0.4324]], device='cuda:0')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+current_position =  tensor([[ 0.1200, -0.0100,  0.4300]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1160,  0.0644,  0.4143, -0.1028,  0.0510,  0.4248, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0672, -0.1347,  0.4000, -0.0842,
+         -0.1450,  0.4138]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0672, -0.1347,  0.4000, -0.0842, -0.1450,  0.4138, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0672, -0.1347,  0.4000, -0.0842,
+         -0.1450,  0.4138]], device='cuda:0')
+pos_actions =  tensor([[-0.0080, -0.0100,  0.0069]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0311, -0.0123,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066878969031217, y=0.7071040553033412, z=0.017336445766279795, w=0.017190665851126302)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.1138, -0.0176,  0.4353]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1178,  0.0643,  0.4115, -0.1050,  0.0501,  0.4268, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0671, -0.1347,  0.4000, -0.0843,
+         -0.1452,  0.4137]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0671, -0.1347,  0.4000, -0.0843, -0.1452,  0.4137, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0671, -0.1347,  0.4000, -0.0843,
+         -0.1452,  0.4137]], device='cuda:0')
+pos_actions =  tensor([[-0.0079, -0.0100,  0.0066]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0307, -0.0114,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066743475728395, y=0.7071170422707153, z=0.017345970925832965, w=0.017203845658955396)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.1058, -0.0276,  0.4422]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1248,  0.0538,  0.4106, -0.1061,  0.0497,  0.4270, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0662, -0.1372,  0.4000, -0.0832,
+         -0.1459,  0.4116]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0662, -0.1372,  0.4000, -0.0832, -0.1459,  0.4116, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0662, -0.1372,  0.4000, -0.0832,
+         -0.1459,  0.4116]], device='cuda:0')
+pos_actions =  tensor([[-0.0085, -0.0100,  0.0070]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9983,  0.0297, -0.0097,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066551366125373, y=0.7071364518391572, z=0.01734382878910507, w=0.0171973248610905)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0978, -0.0376,  0.4489]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1063,  0.0448,  0.4107, -0.1034,  0.0506,  0.4238, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0650, -0.1386,  0.4000, -0.0835,
+         -0.1456,  0.4129]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0650, -0.1386,  0.4000, -0.0835, -0.1456,  0.4129, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0650, -0.1386,  0.4000, -0.0835,
+         -0.1456,  0.4129]], device='cuda:0')
+pos_actions =  tensor([[-0.0084, -0.0100,  0.0072]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0325, -0.0092,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066580932172167, y=0.7071329627633086, z=0.017355010053854238, w=0.017208018195691156)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0894, -0.0476,  0.4558]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1259,  0.0351,  0.4055, -0.1046,  0.0502,  0.4257, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0654, -0.1378,  0.4000, -0.0830,
+         -0.1459,  0.4119]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0654, -0.1378,  0.4000, -0.0830, -0.1459,  0.4119, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0654, -0.1378,  0.4000, -0.0830,
+         -0.1459,  0.4119]], device='cuda:0')
+pos_actions =  tensor([[-0.0090, -0.0100,  0.0077]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0314, -0.0080,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.706705344644684, y=0.7070867350916571, z=0.01733504014867405, w=0.0171872421028789)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0811, -0.0576,  0.4630]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1204,  0.0259,  0.4091, -0.1053,  0.0501,  0.4265, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0662, -0.1388,  0.4000, -0.0837,
+         -0.1462,  0.4127]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0662, -0.1388,  0.4000, -0.0837, -0.1462,  0.4127, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0662, -0.1388,  0.4000, -0.0837,
+         -0.1462,  0.4127]], device='cuda:0')
+pos_actions =  tensor([[-0.0085, -0.0100,  0.0068]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0319, -0.0068,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066758784970786, y=0.7071147471352509, z=0.017360537316798482, w=0.017220594597874755)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0721, -0.0677,  0.4707]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1258,  0.0126,  0.4055, -0.1034,  0.0510,  0.4238, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0669, -0.1388,  0.4000, -0.0831,
+         -0.1466,  0.4117]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0669, -0.1388,  0.4000, -0.0831, -0.1466,  0.4117, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0669, -0.1388,  0.4000, -0.0831,
+         -0.1466,  0.4117]], device='cuda:0')
+pos_actions =  tensor([[-0.0092, -0.0100,  0.0081]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0327, -0.0060,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066429136496278, y=0.7071478522130383, z=0.017355485468151435, w=0.017219025042560402)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0634, -0.0778,  0.4777]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1217,  0.0006,  0.4075, -0.1056,  0.0505,  0.4260, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0669, -0.1373,  0.4000, -0.0831,
+         -0.1464,  0.4118]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0669, -0.1373,  0.4000, -0.0831, -0.1464,  0.4118, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0669, -0.1373,  0.4000, -0.0831,
+         -0.1464,  0.4118]], device='cuda:0')
+pos_actions =  tensor([[-0.0089, -0.0093,  0.0073]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0321, -0.0038,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066596187847461, y=0.707131643655454, z=0.017347664832423147, w=0.01720698244884877)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0544, -0.0877,  0.4855]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1200, -0.0085,  0.4060, -0.1059,  0.0508,  0.4255, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0672, -0.1375,  0.4000, -0.0837,
+         -0.1460,  0.4126]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0672, -0.1375,  0.4000, -0.0837, -0.1460,  0.4126, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0672, -0.1375,  0.4000, -0.0837,
+         -0.1460,  0.4126]], device='cuda:0')
+pos_actions =  tensor([[-0.0088, -0.0090,  0.0072]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0334, -0.0031,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066503123748697, y=0.7071402140052514, z=0.01735374589959616, w=0.017230822973914737)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0453, -0.0973,  0.4931]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1264, -0.0224,  0.4058, -0.1049,  0.0512,  0.4233, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0665, -0.1396,  0.4000, -0.0848,
+         -0.1452,  0.4129]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0665, -0.1396,  0.4000, -0.0848, -0.1452,  0.4129, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0665, -0.1396,  0.4000, -0.0848,
+         -0.1452,  0.4129]], device='cuda:0')
+pos_actions =  tensor([[-0.0093, -0.0091,  0.0076]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9981,  0.0357, -0.0028,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.706659459326936, y=0.7071314360781705, z=0.017347215194838565, w=0.01722250791176133)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0363, -0.1064,  0.5004]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1239, -0.0328,  0.4048, -0.1102,  0.0490,  0.4279, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0675, -0.1404,  0.4000, -0.0848,
+         -0.1453,  0.4148]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0675, -0.1404,  0.4000, -0.0848, -0.1453,  0.4148, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0675, -0.1404,  0.4000, -0.0848,
+         -0.1453,  0.4148]], device='cuda:0')
+pos_actions =  tensor([[-0.0083, -0.0081,  0.0059]], device='cuda:0')
+rot_actions_quat =  tensor([[ 0.9982,  0.0343, -0.0013,  0.0500]], device='cuda:0')
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066374674710638, y=0.7071535241502601, z=0.017344135261000097, w=0.017221028424481775)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0272, -0.1155,  0.5079]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1275, -0.0433,  0.4041, -0.1117,  0.0490,  0.4275, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0673, -0.1398,  0.4000, -0.0836,
+         -0.1448,  0.4129]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0673, -0.1398,  0.4000, -0.0836, -0.1448,  0.4129, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0673, -0.1398,  0.4000, -0.0836,
+         -0.1448,  0.4129]], device='cuda:0')
+pos_actions =  tensor([[-0.0088, -0.0064,  0.0065]], device='cuda:0')
+rot_actions_quat =  tensor([[9.9818e-01, 3.3701e-02, 6.2276e-04, 4.9970e-02]], device='cuda:0')
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066352906187089, y=0.7071566631354909, z=0.017314606657159642, w=0.017211165898872803)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0187, -0.1238,  0.5142]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1321, -0.0574,  0.4029, -0.1105,  0.0489,  0.4274, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0671, -0.1398,  0.4000, -0.0826,
+         -0.1450,  0.4126]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0671, -0.1398,  0.4000, -0.0826, -0.1450,  0.4126, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0671, -0.1398,  0.4000, -0.0826,
+         -0.1450,  0.4126]], device='cuda:0')
+pos_actions =  tensor([[-0.0091, -0.0053,  0.0068]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9982, 0.0335, 0.0019, 0.0500]], device='cuda:0')
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066192877083886, y=0.7071716232075788, z=0.01732315864671336, w=0.017244875846135002)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0099, -0.1307,  0.5207]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1285, -0.0671,  0.4039, -0.1093,  0.0481,  0.4256, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0647, -0.1363,  0.4000, -0.0842,
+         -0.1448,  0.4138]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0647, -0.1363,  0.4000, -0.0842, -0.1448,  0.4138, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0647, -0.1363,  0.4000, -0.0842,
+         -0.1448,  0.4138]], device='cuda:0')
+pos_actions =  tensor([[-0.0093, -0.0051,  0.0067]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9981, 0.0370, 0.0026, 0.0500]], device='cuda:0')
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066493861931505, y=0.7071425102031509, z=0.017298254758109186, w=0.01723036966387397)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[ 0.0008, -0.1362,  0.5276]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1299, -0.0738,  0.4020, -0.1041,  0.0489,  0.4225, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0629, -0.1326,  0.4000, -0.0865,
+         -0.1444,  0.4140]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0629, -0.1326,  0.4000, -0.0865, -0.1444,  0.4140, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0629, -0.1326,  0.4000, -0.0865,
+         -0.1444,  0.4140]], device='cuda:0')
+pos_actions =  tensor([[-0.0099, -0.0055,  0.0074]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9979, 0.0406, 0.0030, 0.0500]], device='cuda:0')
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066419827820408, y=0.7071479129634574, z=0.017337089849999487, w=0.017273177959648372)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0085, -0.1414,  0.5343]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1281, -0.0867,  0.4019, -0.1015,  0.0464,  0.4247, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0611, -0.1342,  0.4000, -0.0888,
+         -0.1444,  0.4141]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0611, -0.1342,  0.4000, -0.0888, -0.1444,  0.4141, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0611, -0.1342,  0.4000, -0.0888,
+         -0.1444,  0.4141]], device='cuda:0')
+pos_actions =  tensor([[-0.0097, -0.0045,  0.0061]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9979, 0.0406, 0.0050, 0.0500]], device='cuda:0')
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066486295191571, y=0.7071425979483327, z=0.017310564636614477, w=0.01724543178761916)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0183, -0.1468,  0.5415]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1303, -0.0945,  0.4000, -0.1015,  0.0442,  0.4264, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0537, -0.1332,  0.4000, -0.0879,
+         -0.1444,  0.4136]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0537, -0.1332,  0.4000, -0.0879, -0.1444,  0.4136, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0537, -0.1332,  0.4000, -0.0879,
+         -0.1444,  0.4136]], device='cuda:0')
+pos_actions =  tensor([[-0.0100, -0.0021,  0.0054]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9979, 0.0410, 0.0067, 0.0500]], device='cuda:0')
+keypoints unchanged
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066341493623454, y=0.7071564328306187, z=0.017317242469806846, w=0.017264749476058244)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0280, -0.1515,  0.5479]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1264, -0.1010,  0.4001, -0.0994,  0.0407,  0.4237, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0416, -0.1304,  0.4000, -0.0869,
+         -0.1447,  0.4133]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0416, -0.1304,  0.4000, -0.0869, -0.1447,  0.4133, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0416, -0.1304,  0.4000, -0.0869,
+         -0.1447,  0.4133]], device='cuda:0')
+pos_actions =  tensor([[-0.0100, -0.0001,  0.0054]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9977, 0.0446, 0.0072, 0.0500]], device='cuda:0')
+keypoints unchanged
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066343631609446, y=0.707155949399646, z=0.017303962627058956, w=0.01728909790049572)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0380, -0.1542,  0.5535]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1259, -0.1061,  0.4000, -0.1004,  0.0395,  0.4259, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0247, -0.1436,  0.4000, -0.0869,
+         -0.1459,  0.4133]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0247, -0.1436,  0.4000, -0.0869, -0.1459,  0.4133, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0247, -0.1436,  0.4000, -0.0869,
+         -0.1459,  0.4133]], device='cuda:0')
+pos_actions =  tensor([[-0.0100,  0.0021,  0.0030]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9982, 0.0455, 0.0070, 0.0383]], device='cuda:0')
+keypoints unchanged
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7067857548851104, y=0.7070043626710036, z=0.01728880808301761, w=0.017315454678442158)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0480, -0.1547,  0.5589]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1122, -0.1094,  0.4000, -0.1013,  0.0369,  0.4262, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0075, -0.1444,  0.4000, -0.0877,
+         -0.1478,  0.4138]], device='cuda:0')
+self.desired_goal =  tensor([[ 0.0075, -0.1444,  0.4000, -0.0877, -0.1478,  0.4138, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064,  0.0075, -0.1444,  0.4000, -0.0877,
+         -0.1478,  0.4138]], device='cuda:0')
+pos_actions =  tensor([[-0.0100,  0.0041,  0.0011]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9985, 0.0475, 0.0074, 0.0258]], device='cuda:0')
+keypoints unchanged
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066037371226059, y=0.7071858838542928, z=0.01727001371074639, w=0.01735024460981708)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0580, -0.1531,  0.5625]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1087, -0.1123,  0.4013, -0.1021,  0.0351,  0.4248, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0050, -0.1523,  0.4000, -0.0883,
+         -0.1491,  0.4126]], device='cuda:0')
+self.desired_goal =  tensor([[-0.0050, -0.1523,  0.4000, -0.0883, -0.1491,  0.4126, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0050, -0.1523,  0.4000, -0.0883,
+         -0.1491,  0.4126]], device='cuda:0')
+pos_actions =  tensor([[-0.0100,  0.0052,  0.0001]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9986, 0.0486, 0.0072, 0.0175]], device='cuda:0')
+keypoints unchanged
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066155317950359, y=0.7071735368961263, z=0.017286387434489545, w=0.01735683580916743)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0680, -0.1494,  0.5640]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.1013, -0.1095,  0.4028, -0.1030,  0.0347,  0.4233, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0162, -0.1548,  0.4000, -0.0894,
+         -0.1494,  0.4127]], device='cuda:0')
+self.desired_goal =  tensor([[-0.0162, -0.1548,  0.4000, -0.0894, -0.1494,  0.4127, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0162, -0.1548,  0.4000, -0.0894,
+         -0.1494,  0.4127]], device='cuda:0')
+pos_actions =  tensor([[-0.0100,  0.0057, -0.0006]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9986, 0.0500, 0.0067, 0.0136]], device='cuda:0')
+keypoints unchanged
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7066043698449064, y=0.7071847236428798, z=0.017278248917170513, w=0.017363561748174865)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0782, -0.1442,  0.5644]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.0822, -0.1018,  0.4012, -0.1082,  0.0348,  0.4262, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0277, -0.1457,  0.4000, -0.0898,
+         -0.1491,  0.4121]], device='cuda:0')
+self.desired_goal =  tensor([[-0.0277, -0.1457,  0.4000, -0.0898, -0.1491,  0.4121, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0277, -0.1457,  0.4000, -0.0898,
+         -0.1491,  0.4121]], device='cuda:0')
+pos_actions =  tensor([[-0.0091,  0.0074, -0.0022]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9987, 0.0493, 0.0091, 0.0083]], device='cuda:0')
+keypoints unchanged
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7065941880309872, y=0.7071994738913945, z=0.017220477791418637, w=0.01723405678301095)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0831, -0.1417,  0.5641]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.0718, -0.0909,  0.4025, -0.1105,  0.0355,  0.4264, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0350, -0.1473,  0.4000, -0.1140,
+         -0.1432,  0.4000]], device='cuda:0')
+self.desired_goal =  tensor([[-0.0350, -0.1473,  0.4000, -0.1140, -0.1432,  0.4000, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0350, -0.1473,  0.4000, -0.1140,
+         -0.1432,  0.4000]], device='cuda:0')
+pos_actions =  tensor([[-0.0079,  0.0067, -0.0039]], device='cuda:0')
+rot_actions_quat =  tensor([[0.9987, 0.0479, 0.0139, 0.0044]], device='cuda:0')
+keypoints unchanged
+keypoints unchanged
+msg.pose.orientation =  geometry_msgs.msg.Quaternion(x=0.7065927924415675, y=0.7072012251950811, z=0.01721588286051993, w=0.017223998651213157)
+applicate side_camera2
+offset =  tensor([ 0.7824, -0.0612,  0.3615])
+current_position =  tensor([[-0.0831, -0.1417,  0.5641]], device='cuda:0')
+self.achieved_goal =  tensor([[ 0.0653, -0.0908,  0.4000, -0.1118,  0.0358,  0.4263, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0435, -0.1541,  0.4000, -0.1148,
+         -0.1432,  0.4000]], device='cuda:0')
+self.desired_goal =  tensor([[-0.0435, -0.1541,  0.4000, -0.1148, -0.1432,  0.4000, -0.0935, -0.0472,
+          0.4193,  0.1087, -0.0277,  0.4064, -0.0435, -0.1541,  0.4000, -0.1148,
+         -0.1432,  0.4000]], device='cuda:0')
+pos_actions =  tensor([[-0.0075,  0.0067, -0.0043]], device='cuda:0')
+

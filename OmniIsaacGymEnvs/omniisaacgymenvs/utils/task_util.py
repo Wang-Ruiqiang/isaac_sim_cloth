@@ -50,6 +50,7 @@ def import_tasks():
     from omniisaacgymenvs.tasks.warp.cartpole import CartpoleTask as CartpoleTaskWarp
     from omniisaacgymenvs.tasks.warp.humanoid import HumanoidLocomotionTask as HumanoidLocomotionTaskWarp
     from omniisaacgymenvs.tasks.cloth_manipulation.franka_cloth_manipulation import FrankaClothManipulation
+    from omniisaacgymenvs.tasks.cloth_manipulation.cloth_manipulation_real import ClothManipulationReal
 
     # Mappings from strings to environments
     task_map = {
@@ -65,6 +66,7 @@ def import_tasks():
         "FactoryTaskNutBoltScrew": FactoryTaskNutBoltScrew,
         "FrankaCabinet": FrankaCabinetTask,
         "FrankaClothManipulation": FrankaClothManipulation,
+        "ClothManipulationReal":ClothManipulationReal,
         "FrankaDeformable": FrankaDeformableTask,
         "Humanoid": HumanoidLocomotionTask,
         "Ingenuity": IngenuityTask,

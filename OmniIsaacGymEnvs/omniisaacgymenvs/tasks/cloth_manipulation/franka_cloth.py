@@ -4,6 +4,7 @@ import omegaconf
 import os
 import torch
 import argparse
+import random
 
 import matplotlib.pyplot as plt
 
@@ -77,7 +78,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         # self.create_cone()
         # self.add_attachment()
         # self.chessboard_view_for_calibration()
-        self.import_camera()
+        # self.import_camera()
         
         self.frankas = FactoryFrankaView(prim_paths_expr="/World/envs/.*/franka", name="frankas_view")
         # self.cloth = RigidPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view")
@@ -235,10 +236,10 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
 
         cloth_noise_xy = 2 * (torch.rand((self.num_envs, 2), dtype=torch.float32, device=self.device) - 0.5)  # [-1, 1]
         cloth_noise_xy = cloth_noise_xy @ torch.diag(
-            torch.tensor(self.cfg_task.randomize.cloth_pos_xy_initial_noise, device=self.device))
+            torch.tensor(self.cfg_task.randomize.cloth_pos_xy_noise, device=self.device))
         
-        # cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[idx][0].item()
-        # cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[idx][1].item()
+        cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0] + cloth_noise_xy[idx][0].item()
+        cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1] + cloth_noise_xy[idx][1].item()
 
         cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0]
         cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1]
@@ -263,6 +264,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
         physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 5).GetQuat()) #修改cloth的oritation
+        # physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
 
         # Define the material
         material_path = env.GetPrim().GetPath().AppendChild("clothMaterial")
@@ -272,7 +274,7 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         self.shader.CreateIdAttr("UsdPreviewSurface")
 
         # Set shader attributes for base color
-        self.shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(0, 0, 0.5))    #设置布料颜色
+        self.shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(1, 1, 1))    #设置布料颜色
         material.CreateSurfaceOutput().ConnectToSource(self.shader.ConnectableAPI(), "surface")
 
         # Bind the material to the mesh
@@ -281,8 +283,12 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
         particle_material_path = env.GetPrim().GetPath().AppendChild("particleMaterial")
         self.particle_material = ParticleMaterial(
-            prim_path=particle_material_path, drag=0.3, lift=0.6, friction=0.9
+            prim_path=particle_material_path, drag=0.3, lift=0.6, friction=1.2
         )
+
+        # self.particle_material = ParticleMaterial(
+        #     prim_path=particle_material_path, drag=random.uniform(0.1, 0.6), lift=random.uniform(0.2, 0.7), friction=random.uniform(0.6, 1.2)
+        # )
 
         particle_system = ParticleSystem(
             particle_system_enabled = True,
@@ -313,6 +319,17 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
             spring_damping=0.2,
             particle_mass=0.02,
         )
+        # self.cloth1 = ClothPrim(
+        #     prim_path=str(cloth_path),
+        #     name="clothPrim" + str(idx),
+        #     particle_system=particle_system,
+        #     particle_material=self.particle_material,
+        #     stretch_stiffness=random.uniform(5000.0, 20000.0),
+        #     bend_stiffness=random.uniform(50.0, 300.0),
+        #     shear_stiffness=random.uniform(50.0, 200.0),
+        #     spring_damping=random.uniform(0.1, 0.5),
+        #     particle_mass=random.uniform(0.01, 0.05),
+        # )
 
 
     def chessboard_view_for_calibration(self):

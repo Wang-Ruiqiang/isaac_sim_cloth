@@ -1,7 +1,7 @@
 import torch
 
 # 加载 .pth 文件
-model_path = '/home/ruiqiang/workspace/isaac_sim_cloth/success_training_experiment/traning_with_0.02_3/FrankaClothManipulation.pth'
+model_path = '/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/success_training_experiment/traning_with_0.02_3/FrankaClothManipulation.pth'
 checkpoint = torch.load(model_path)
 print(checkpoint.keys())
 

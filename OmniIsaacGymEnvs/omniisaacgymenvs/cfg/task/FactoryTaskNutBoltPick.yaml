@@ -100,6 +100,7 @@ randomize:
   bolt_pos_xy_initial: [0.0, 0.0]  # initial position of bolt on table
   bolt_pos_xy_noise: [0.1, 0.1]  # noise on bolt position
 
+
 rl:
   pos_action_scale: [0.1, 0.1, 0.1]
   rot_action_scale: [0.1, 0.1, 0.1]
