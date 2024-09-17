@@ -74,7 +74,6 @@ sim:
 env:
   controlFrequencyInv: 2 
   numEnvs: ${resolve_default:1,${...num_envs}}
-  # numObservations: 16
   numObservations: 97
   numActions: 12
 
