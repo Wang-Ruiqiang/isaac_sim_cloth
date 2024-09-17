@@ -51,6 +51,7 @@ from omniisaacgymenvs.tasks.factory.factory_schema_config_task import FactorySch
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32MultiArray
+from geometry_msgs.msg import PoseStamped
 
 
 
@@ -73,6 +74,7 @@ class ClothManipulationReal():
         self.is_first_run = True
 
         self.keypoint_param_init()
+        self.robot_param_init()
         self.ros_param_init(name)
         
         self.step_count = 0
@@ -95,6 +97,7 @@ class ClothManipulationReal():
         self.num_actions = self._task_cfg["env"]["numActions"]
         self.num_envs = self._task_cfg["env"]["numEnvs"]
         self.clip_actions = self._task_cfg["env"].get("clipActions", 1)
+        self.clip_obs = self._task_cfg["env"].get("clipObservations", np.Inf)
         
 
         self.observation_space = spaces.Box(
@@ -113,8 +116,6 @@ class ClothManipulationReal():
         rclpy.init(args=None)
         self.node = rclpy.create_node(name)
 
-        self.keypoint_pose = torch.zeros(1, 24, device=self.device)
-
         self.is_first_call_keypoint_callback = True
 
         # ROS 2 订阅者，用于接收关键点数据
@@ -125,9 +126,27 @@ class ClothManipulationReal():
             10
         )
 
+        self.subscription = self.node.create_subscription(
+            PoseStamped,
+            '/cartesian_compliance_controller/current_pose',
+            self.pose_callback,
+            10)
+        
+        self.robot_control_publisher = self.node.create_publisher(Float32MultiArray, '/cloth_folding/robot_control', 10)
+
+
+
     def keypoint_param_init(self):
         self.keypoint_offsets = None
+        self.keypoint_pose = torch.zeros(8, 3, device=self.device)
         self.desired_initial_pose = torch.tensor([0.0887,  0.0788,  0.4049], device=self.device)
+
+    
+    def robot_param_init(self):
+        self.current_pose = torch.zeros(1, 3, device=self.device)
+        self.robot_end_offsets = None
+        self.desired_initial_pose_robot = torch.tensor([0.1210, 0.0822, 0.4006], device=self.device)
+
 
     def spin_ros(self):
         rclpy.spin_once(self.node, timeout_sec=0.1)  # 每次只 spin 一次，这样可以在任务中间运行 ROS
@@ -144,11 +163,30 @@ class ClothManipulationReal():
 
         self.actions = actions.clone().to(self.device) 
 
-        # self._apply_actions_as_ctrl_targets(
-        #     actions=self.actions,
-        #     ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,   #初始状态夹爪位置
-        #     do_scale=True
-        # )
+        pos_actions = actions[:, 0:3]   #增量
+        pos_actions = pos_actions @ torch.diag(torch.tensor(self.cfg_task.rl.pos_action_scale, device=self.device))
+
+        rot_actions = actions[:, 3:6]
+        rot_actions = rot_actions @ torch.diag(torch.tensor(self.cfg_task.rl.rot_action_scale, device=self.device))
+
+        angle = torch.norm(rot_actions, p=2, dim=-1)
+        axis = rot_actions / angle.unsqueeze(-1)
+        rot_actions_quat = torch.zeros(1, 4, device=self.device)
+
+        rot_actions_quat[0, 0] = torch.cos(angle / 2.0)                      # 四元数的 w 分量
+        rot_actions_quat[0, 1] = axis[0, 0] * torch.sin(angle / 2.0)         # 四元数的 x 分量
+        rot_actions_quat[0, 2] = axis[0, 1] * torch.sin(angle / 2.0)         # 四元数的 y 分量
+        rot_actions_quat[0, 3] = axis[0, 2] * torch.sin(angle / 2.0)         # 四元数的 z 分量
+
+
+        control_msg = Float32MultiArray()
+
+        control_data = torch.cat((pos_actions.flatten(), rot_actions_quat.flatten()))
+
+        control_msg.data = control_data.cpu().numpy().tolist()
+
+        self.robot_control_publisher.publish(control_msg)
+        print("publish success")
 
 
     def post_physics_step(self):
@@ -201,7 +239,7 @@ class ClothManipulationReal():
         # print("self.keypoint_vel = ", self.keypoint_vel)
         # print("self.keypoint_pos = ", self.keypoint_pos)
         # print("--------------------------------------------------------------------")
-        obs_tensors = [self.fingertip_midpoint_pos,
+        obs_tensors = [self.current_pose,
                     #    self.fingertip_midpoint_quat,
                        torch.tensor([[0.0, -0.0, 0.0, -0.0]], device='cuda:0'),
                     #    self.fingertip_midpoint_linvel,
@@ -229,7 +267,7 @@ class ClothManipulationReal():
         self.obs_buf = torch.cat(obs_tensors, dim=-1)  # shape = (num_envs, num_observations)
 
         observations = {
-            self.frankas.name: {
+            'denso': {
                 "obs_buf": self.obs_buf
             }
         }
@@ -252,10 +290,10 @@ class ClothManipulationReal():
             self.reset_buf
         )
 
-        if self.progress_buf[:] >= self.max_episode_length - 1:
-            self.plot_displacements()
-            self.y_displacements.clear()
-            self.z_displacements.clear()
+        # if self.progress_buf[:] >= self.max_episode_length - 1:
+        #     self.plot_displacements()
+        #     self.y_displacements.clear()
+        #     self.z_displacements.clear()
 
         
     def _update_rew_buf(self):
@@ -337,7 +375,7 @@ class ClothManipulationReal():
         point_one_dis = self.goal_distance(self.keypoint_pose[0], self.keypoint_pose[1])
         point_two_dis = self.goal_distance(self.keypoint_pose[2], self.keypoint_pose[3])
 
-        if self.particle_cloth_positon[0, 8][1] - self.particle_cloth_positon[0, 80][1] > 0.03 :
+        if self.keypoint_pose[1][1] - self.keypoint_pose[0][1] > 0.03 :
             action_penalty +=  point_one_dis
 
         # print("self.particle_cloth_positon[0, 80] = ", self.particle_cloth_positon[0, 80])
@@ -371,6 +409,11 @@ class ClothManipulationReal():
         return task_rewards
     
 
+    def goal_distance(self, goal_a, goal_b):
+        assert goal_a.shape == goal_b.shape
+        return torch.norm(goal_a - goal_b, p=2, dim=-1)
+    
+
     def cleanup(self) -> None:
         """Prepares torch buffers for RL data collection."""
 
@@ -386,6 +429,20 @@ class ClothManipulationReal():
     def reset(self):
         """Flags all environments for reset."""
         self.reset_buf = torch.ones_like(self.reset_buf)
+
+
+    def pose_callback(self, msg):
+        position_data = msg.pose.position
+        position_array = torch.tensor([-position_data.x, -position_data.y, position_data.z], device=self.device).view(1, 3)
+
+        if self.robot_end_offsets is None:
+            self.robot_end_offsets = self.desired_initial_pose - position_array[0]
+        
+        position_array[0] += self.robot_end_offsets
+        self.current_pose = position_array
+        print("self.current_pose = ", self.current_pose)
+        
+
 
 
     def front_camera_callback(self, msg):

@@ -69,11 +69,8 @@ class VecEnvRealWorld():
         #     for _ in range(self._task.control_frequency_inv):
         #         self._world.step(render=False)
         #         self.sim_frame_count += 1
-        is_failed = False
 
-        self._obs, self._rew, self._resets, self._extras, is_failed = self._task.post_physics_step()
-        while is_failed:
-            self._obs, self._rew, self._resets, self._extras, is_failed = self._task.post_physics_step()
+        self._obs, self._rew, self._resets, self._extras = self._task.post_physics_step()
 
         # self._states = self._task.get_states()
         self._process_data()
