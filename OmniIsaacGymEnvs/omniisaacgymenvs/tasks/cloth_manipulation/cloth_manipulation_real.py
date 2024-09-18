@@ -119,18 +119,27 @@ class ClothManipulationReal():
         self.is_first_call_keypoint_callback = True
 
         # ROS 2 订阅者，用于接收关键点数据
-        self.keypoint_subscriber = self.node.create_subscription(
+        self.front_camera_subscriber = self.node.create_subscription(
             Float32MultiArray,
             'front_camera/keypoints',  # 订阅关键点话题
             self.front_camera_callback,  # 指定回调函数
             10
         )
 
-        self.subscription = self.node.create_subscription(
+
+        self.side_camera_subscriber = self.node.create_subscription(
+            Float32MultiArray,
+            'side_camera/keypoints',  # 订阅关键点话题
+            self.side_camera_callback,  # 指定回调函数
+            10
+        )
+
+        self.robot_subscription = self.node.create_subscription(
             PoseStamped,
             '/cartesian_compliance_controller/current_pose',
             self.pose_callback,
             10)
+        
         
         self.robot_control_publisher = self.node.create_publisher(Float32MultiArray, '/cloth_folding/robot_control', 10)
 
@@ -141,16 +150,21 @@ class ClothManipulationReal():
         self.keypoint_pose = torch.zeros(8, 3, device=self.device)
         self.desired_initial_pose = torch.tensor([0.0887,  0.0788,  0.4049], device=self.device)
 
+        self.previous_keypoint_pose = torch.zeros(8, 3, device=self.device)  # 上次使用的关键点坐标
+        self.front_keypoint_pose = torch.zeros(4, 3, device=self.device)     # 存储前置相机的关键点数据
+        self.side_keypoint_pose = torch.zeros(4, 3, device=self.device)      # 存储侧面相机的关键点数据
+
     
     def robot_param_init(self):
         self.current_pose = torch.zeros(1, 3, device=self.device)
         self.robot_end_offsets = None
         self.desired_initial_pose_robot = torch.tensor([0.1210, 0.0822, 0.4006], device=self.device)
+        self.grip_offset = self.desired_initial_pose - self.desired_initial_pose_robot
 
 
     def spin_ros(self):
         rclpy.spin_once(self.node, timeout_sec=0.1)  # 每次只 spin 一次，这样可以在任务中间运行 ROS
-        time.sleep(0.5)
+        time.sleep(1)
 
 
     def destroy(self):
@@ -159,12 +173,14 @@ class ClothManipulationReal():
 
         
     def pre_physics_step(self, actions) -> None:
-        """Reset environments. Apply actions from policy. Simulation step called after this method."""
-
         self.actions = actions.clone().to(self.device) 
+        if torch.all(torch.eq(self.current_pose, 0)) or torch.all(torch.eq(self.keypoint_pose, 0)):
+            print("Current pose or keypoint pose is all zeros, skipping step.")
+            return
 
         pos_actions = actions[:, 0:3]   #增量
         pos_actions = pos_actions @ torch.diag(torch.tensor(self.cfg_task.rl.pos_action_scale, device=self.device))
+        print("pos_actions = ", pos_actions)
 
         rot_actions = actions[:, 3:6]
         rot_actions = rot_actions @ torch.diag(torch.tensor(self.cfg_task.rl.rot_action_scale, device=self.device))
@@ -195,6 +211,10 @@ class ClothManipulationReal():
         self.progress_buf[:] += 1
 
         self.spin_ros()
+        # 阻塞检查，直到 current_pose 和 keypoint_pose 被赋值（不全为 0）
+        while torch.all(torch.eq(self.current_pose, 0)) or torch.all(torch.eq(self.keypoint_pose, 0)):
+            # print("Waiting for valid current_pose and keypoint_pose data...")
+            self.spin_ros()
 
         self.refresh_env_tensors()
         self.get_observations()
@@ -206,22 +226,36 @@ class ClothManipulationReal():
     
     def refresh_env_tensors(self):
         """Refresh tensors."""
+        grip_point = self.current_pose + self.grip_offset
 
-        self.desired_goal = torch.cat((self.keypoint_pose[1], self.keypoint_pose[3], 
+        # self.desired_goal = torch.cat((self.keypoint_pose[1], self.keypoint_pose[3], 
+        #                                self.keypoint_pose[5], self.keypoint_pose[4], 
+        #                                self.keypoint_pose[1], self.keypoint_pose[3]), dim = -1)
+
+
+
+        self.desired_goal = torch.cat((self.key_point_one, self.key_point_three, 
                                        self.keypoint_pose[5], self.keypoint_pose[4], 
-                                       self.keypoint_pose[1], self.keypoint_pose[3]), dim = -1)
+                                       self.key_point_one, self.key_point_three), dim = -1)
         self.desired_goal = self.desired_goal.unsqueeze(dim=0)
 
 
-        self.achieved_goal = torch.cat((self.keypoint_pose[0], self.keypoint_pose[2], self.keypoint_pose[5],
-                            self.keypoint_pose[4], self.keypoint_pose[1], self.keypoint_pose[3]), 0)
+        # self.achieved_goal = torch.cat((self.keypoint_pose[0], self.keypoint_pose[2], self.keypoint_pose[5],
+        #                     self.keypoint_pose[4], self.keypoint_pose[1], self.keypoint_pose[3]), 0)
+        self.achieved_goal = torch.cat((grip_point.squeeze(0), self.keypoint_pose[2], self.keypoint_pose[5],
+                            self.keypoint_pose[4], self.key_point_one, self.key_point_three), 0)
         self.achieved_goal = self.achieved_goal.unsqueeze(dim=0)
 
 
-        self.keypoint_pos = torch.cat((self.keypoint_pose[3], self.keypoint_pose[7], 
-                                    self.keypoint_pose[1], self.keypoint_pose[5],
+        # self.keypoint_pos = torch.cat((self.keypoint_pose[3], self.keypoint_pose[7], 
+        #                             self.keypoint_pose[1], self.keypoint_pose[5],
+        #                             self.keypoint_pose[4], self.keypoint_pose[2], 
+        #                             self.keypoint_pose[6], self.keypoint_pose[0]), dim = -1)
+
+        self.keypoint_pos = torch.cat((self.key_point_three, self.keypoint_pose[7], 
+                                    self.key_point_one, self.keypoint_pose[5],
                                     self.keypoint_pose[4], self.keypoint_pose[2], 
-                                    self.keypoint_pose[6], self.keypoint_pose[0]), dim = -1)
+                                    self.keypoint_pose[6], grip_point.squeeze(0)), dim = -1)
         self.keypoint_pos = self.keypoint_pos.unsqueeze(dim=0)
         
     
@@ -230,12 +264,12 @@ class ClothManipulationReal():
         """Compute observations."""
         
         # print("--------------------------------------------------------------------")
-        # print("self.fingertip_midpoint_pos = ", self.fingertip_midpoint_pos)
+        print("self.current_pose = ", self.current_pose)
         # print("self.fingertip_midpoint_quat = ", self.fingertip_midpoint_quat)
         # print("self.fingertip_midpoint_linvel = ", self.fingertip_midpoint_linvel)
         # print("self.fingertip_midpoint_angvel = ", self.fingertip_midpoint_angvel)
-        # print("self.achieved_goal = ",self.achieved_goal)
-        # print("self.desired_goal = ", self.desired_goal)
+        print("self.achieved_goal = ",self.achieved_goal)
+        print("self.desired_goal = ", self.desired_goal)
         # print("self.keypoint_vel = ", self.keypoint_vel)
         # print("self.keypoint_pos = ", self.keypoint_pos)
         # print("--------------------------------------------------------------------")
@@ -284,11 +318,11 @@ class ClothManipulationReal():
         """Assign environments for reset if successful or failed."""
 
         # If max episode length has been reached
-        self.reset_buf[:] = torch.where(
-            self.progress_buf[:] >= self.max_episode_length - 1,
-            torch.ones_like(self.reset_buf),
-            self.reset_buf
-        )
+        # self.reset_buf[:] = torch.where(
+        #     self.progress_buf[:] >= self.max_episode_length - 1,
+        #     torch.ones_like(self.reset_buf),
+        #     self.reset_buf
+        # )
 
         # if self.progress_buf[:] >= self.max_episode_length - 1:
         #     self.plot_displacements()
@@ -421,14 +455,14 @@ class ClothManipulationReal():
         self.obs_buf = torch.zeros((self.num_envs, self.num_observations), device=self.device, dtype=torch.float)
         # self.states_buf = torch.zeros((self.num_envs, self.num_states), device=self.device, dtype=torch.float)
         self.rew_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
-        self.reset_buf = torch.ones(self.num_envs, device=self.device, dtype=torch.long)
+        self.reset_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
         self.progress_buf = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
         self.extras = {}
 
 
     def reset(self):
         """Flags all environments for reset."""
-        self.reset_buf = torch.ones_like(self.reset_buf)
+        # self.reset_buf = torch.ones_like(self.reset_buf)
 
 
     def pose_callback(self, msg):
@@ -436,13 +470,12 @@ class ClothManipulationReal():
         position_array = torch.tensor([-position_data.x, -position_data.y, position_data.z], device=self.device).view(1, 3)
 
         if self.robot_end_offsets is None:
-            self.robot_end_offsets = self.desired_initial_pose - position_array[0]
+            self.robot_end_offsets = self.desired_initial_pose_robot - position_array[0]
         
         position_array[0] += self.robot_end_offsets
         self.current_pose = position_array
-        print("self.current_pose = ", self.current_pose)
+        # print("self.current_pose = ", self.current_pose)
         
-
 
 
     def front_camera_callback(self, msg):
@@ -456,26 +489,44 @@ class ClothManipulationReal():
 
         # 如果offset还未计算，计算offset并存储
             if self.keypoint_offsets is None:
-                # 计算keypoint_pose[0]与期望初始坐标之间的偏移量
-                self.keypoint_offsets = self.desired_initial_pose - keypoint_array[0]
-                print("Offset calculated: ", self.keypoint_offsets)
+                if not torch.all(keypoint_array[0] == 0):
+                    # 计算keypoint_pose[0]与期望初始坐标之间的偏移量
+                    self.keypoint_offsets = self.desired_initial_pose - keypoint_array[0]
+                    print("Offset calculated: ", self.keypoint_offsets)
+                else:
+                    # 如果第一个点为0，不计算 offset
+                    print("First keypoint is 0, unable to calculate offset.")
+                    return
 
-            keypoint_array[0] += self.keypoint_offsets
-            keypoint_array[1] += self.keypoint_offsets
-            keypoint_array[2] += self.keypoint_offsets
-            keypoint_array[3] += self.keypoint_offsets
 
-        self.keypoint_pose = keypoint_array
+            for i in range(4):
+                if not torch.all(keypoint_array[i] == 0):  # 只有非 0 点才应用偏移量
+                    keypoint_array[i] += self.keypoint_offsets
+
+        self.front_keypoint_pose[:4] = keypoint_array
+
+
+        # 检查是否有任何坐标为 0
+        for i in range(4):
+            if torch.all(self.front_keypoint_pose[i] == 0):
+                if torch.all(self.side_keypoint_pose[i] == 0):  # 侧面相机也没有数据
+                    self.front_keypoint_pose[i] = self.previous_keypoint_pose[i]  # 使用上一次的坐标
+                else:
+                    self.front_keypoint_pose[i] = self.side_keypoint_pose[i] + self.keypoint_offsets # 使用侧面相机的数据
+
+        self.keypoint_pose = self.front_keypoint_pose
 
 
         if self.is_first_call_keypoint_callback:
+            self.key_point_one = self.keypoint_pose[1].clone()
+            self.key_point_three = self.keypoint_pose[3].clone()
             self.middle_point_of_zero_one = (self.keypoint_pose[0] + self.keypoint_pose[1]) / 2
             self.middle_point_of_two_three = (self.keypoint_pose[2] + self.keypoint_pose[3]) / 2
+            self.middle_point_of_one_three = self.key_point_one + self.key_point_three / 2
             self.is_first_call_keypoint_callback = False
             
-        
         self.middle_point_of_zero_two= (self.keypoint_pose[0] + self.keypoint_pose[2]) / 2
-        self.middle_point_of_one_three = (self.keypoint_pose[1] + self.keypoint_pose[3]) / 2
+        # self.middle_point_of_one_three = (self.keypoint_pose[1] + self.keypoint_pose[3]) / 2
 
 
         self.keypoint_pose = torch.cat(
@@ -483,5 +534,16 @@ class ClothManipulationReal():
              self.middle_point_of_zero_two.unsqueeze(0), self.middle_point_of_one_three.unsqueeze(0)),
             dim=0
         )
+        self.previous_keypoint_pose = self.keypoint_pose.clone()
 
-        print("self.keypoint_pose = ", self.keypoint_pose)
+        # print("self.keypoint_pose = ", self.keypoint_pose)
+
+    def side_camera_callback(self, msg):
+        data = msg.data
+        if len(data) == 12:  # 确认数据长度是12，表示4个关键点的x、y、z坐标
+            keypoint_array = torch.tensor(data, device=self.device).view(4, 3)
+            keypoint_array[:, 0] = -keypoint_array[:, 0]  # x坐标取反
+            keypoint_array[:, 1] = -keypoint_array[:, 1]  # y坐标取反
+
+            # 存储侧面相机的关键点数据，不应用 offset
+            self.side_keypoint_pose[:4] = keypoint_array
