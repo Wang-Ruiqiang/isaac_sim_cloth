@@ -91,7 +91,7 @@ randomize:
   fingertip_midpoint_rot_initial: [3.1416, 0, 3.1416]  # initial rotation of fingertips (Euler)
   fingertip_midpoint_rot_noise: [0.3, 0.3, 1]  # noise on rotation
   # cloth_pos_xy_initial: [0.0, -0.1]  # initial XY position of nut on table
-  cloth_pos_xy_initial: [0.0, -0.02]  # initial XY position of cloth on table
+  cloth_pos_xy_initial: [0.0, -0.0]  # initial XY position of cloth on table
   cloth_pos_xy_noise: [0.0, 0.0]  # noise on position
   # cloth_pos_xy_noise: [-0.05, 0.1]  # noise on position
 

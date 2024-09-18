@@ -148,7 +148,7 @@ class ClothManipulationReal():
     def keypoint_param_init(self):
         self.keypoint_offsets = None
         self.keypoint_pose = torch.zeros(8, 3, device=self.device)
-        self.desired_initial_pose = torch.tensor([0.0887,  0.0788,  0.4049], device=self.device)
+        self.desired_initial_pose = torch.tensor([0.0908,  0.0993,  0.4049], device=self.device)
 
         self.previous_keypoint_pose = torch.zeros(8, 3, device=self.device)  # 上次使用的关键点坐标
         self.front_keypoint_pose = torch.zeros(4, 3, device=self.device)     # 存储前置相机的关键点数据
@@ -158,7 +158,7 @@ class ClothManipulationReal():
     def robot_param_init(self):
         self.current_pose = torch.zeros(1, 3, device=self.device)
         self.robot_end_offsets = None
-        self.desired_initial_pose_robot = torch.tensor([0.1210, 0.0822, 0.4006], device=self.device)
+        self.desired_initial_pose_robot = torch.tensor([0.1205, 0.1022, 0.4007], device=self.device)
         self.grip_offset = self.desired_initial_pose - self.desired_initial_pose_robot
 
 
@@ -506,14 +506,44 @@ class ClothManipulationReal():
         self.front_keypoint_pose[:4] = keypoint_array
 
 
-        # 检查是否有任何坐标为 0
+        # 检查是否有任何坐标为 0, self.keypoint_pose[0] is the grasp point
         for i in range(4):
             if torch.all(self.front_keypoint_pose[i] == 0):
                 if torch.all(self.side_keypoint_pose[i] == 0):  # 侧面相机也没有数据
                     self.front_keypoint_pose[i] = self.previous_keypoint_pose[i]  # 使用上一次的坐标
-                else:
-                    self.front_keypoint_pose[i] = self.side_keypoint_pose[i] + self.keypoint_offsets # 使用侧面相机的数据
+                elif not torch.all(torch.eq(self.previous_keypoint_pose, 0)):
+                    delta_side_x = torch.abs(self.side_keypoint_pose[i][0] - self.previous_keypoint_pose[i][0])  # 侧面相机 x 方向增量
+                    delta_side_y = torch.abs(self.side_keypoint_pose[i][1] - self.previous_keypoint_pose[i][1])  # 侧面相机 y 方向增量
 
+                    if delta_side_x > 0.04 and delta_side_y > 0.04:
+                        print(f"Side camera keypoint {i} invalid, using previous data.")
+                        self.front_keypoint_pose[i] = self.previous_keypoint_pose[i]
+                    else:
+                        print(f"Using side camera keypoint {i} data.")
+                        self.front_keypoint_pose[i] = self.side_keypoint_pose[i] + self.keypoint_offsets 
+
+            elif not torch.all(torch.eq(self.previous_keypoint_pose, 0)): 
+                # delta = torch.abs(self.front_keypoint_pose[i] - self.previous_keypoint_pose[i])
+                delta_x = torch.abs(self.front_keypoint_pose[i][0] - self.previous_keypoint_pose[i][0])  # x 方向增量
+                delta_y = torch.abs(self.front_keypoint_pose[i][1] - self.previous_keypoint_pose[i][1])  # y 方向增量
+
+
+                if delta_x > 0.04 and delta_y > 0.04:
+                    print(f"Warning: Keypoint {i} has moved too much in both x and y, delta_x: {delta_x}, delta_y: {delta_y}")
+
+                    if not torch.all(self.side_keypoint_pose[i] == 0):
+                        delta_side_x = torch.abs(self.side_keypoint_pose[i][0] - self.previous_keypoint_pose[i][0])
+                        delta_side_y = torch.abs(self.side_keypoint_pose[i][1] - self.previous_keypoint_pose[i][1])
+
+                        if delta_side_x > 0.04 and delta_side_y > 0.04:
+                            print(f"Side camera keypoint {i} also invalid, using previous data.")
+                            self.front_keypoint_pose[i] = self.previous_keypoint_pose[i]
+
+                        else:
+                            print(f"Using side camera keypoint {i} data.")
+                            self.front_keypoint_pose[i] = self.side_keypoint_pose[i] + self.keypoint_offsets  # 使用侧面相机的数据
+
+            
         self.keypoint_pose = self.front_keypoint_pose
 
 

@@ -366,7 +366,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         if do_scale:
             pos_actions = pos_actions @ torch.diag(torch.tensor(self.cfg_task.rl.pos_action_scale, device=self.device))
 
-        # print("pos_actions =", pos_actions)
+        print("pos_actions =", pos_actions)
 
         self.y_displacements.append(pos_actions[0][1].item())
         self.z_displacements.append(pos_actions[0][2].item())
@@ -574,44 +574,44 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
 
         self.achieved_goal = self.achieved_goal.unsqueeze(dim=0)
         # origin_point = torch.tensor([0.1, -0.12, 0.4])
-        offset =  torch.rand(1, 3, device='cuda:0') * 0.1
-        self.fingertip_midpoint_pos = self.fingertip_midpoint_pos + offset
+        # offset =  torch.rand(1, 3, device='cuda:0') * 0.1
+        # self.fingertip_midpoint_pos = self.fingertip_midpoint_pos + offset
 
-        self.achieved_goal = self.achieved_goal.view(-1, 3)
-        self.achieved_goal = self.achieved_goal + offset
-        self.achieved_goal = self.achieved_goal.view(1, -1)
+        # self.achieved_goal = self.achieved_goal.view(-1, 3)
+        # self.achieved_goal = self.achieved_goal + offset
+        # self.achieved_goal = self.achieved_goal.view(1, -1)
 
-        self.desired_goal = self.desired_goal.view(-1, 3)
-        self.desired_goal = self.desired_goal + offset
-        self.desired_goal = self.desired_goal.view(1, -1)
+        # self.desired_goal = self.desired_goal.view(-1, 3)
+        # self.desired_goal = self.desired_goal + offset
+        # self.desired_goal = self.desired_goal.view(1, -1)
 
-        self.keypoint_pos = self.keypoint_pos.view(-1, 3)
-        self.keypoint_pos = self.keypoint_pos + offset
-        self.keypoint_pos = self.keypoint_pos.view(1, -1)
+        # self.keypoint_pos = self.keypoint_pos.view(-1, 3)
+        # self.keypoint_pos = self.keypoint_pos + offset
+        # self.keypoint_pos = self.keypoint_pos.view(1, -1)
 
-        # print("self.fingertip_midpoint_pos = ", self.fingertip_midpoint_pos)
+        print("self.fingertip_midpoint_pos = ", self.fingertip_midpoint_pos)
         # print("self.fingertip_midpoint_quat = ", self.fingertip_midpoint_quat)
         # print("self.fingertip_midpoint_linvel = ", self.fingertip_midpoint_linvel)
         # print("self.fingertip_midpoint_angvel = ", self.fingertip_midpoint_angvel)
-        # print("self.achieved_goal = ",self.achieved_goal)
-        # print("self.desired_goal = ", self.desired_goal)
+        print("self.achieved_goal = ",self.achieved_goal)
+        print("self.desired_goal = ", self.desired_goal)
         # print("self.keypoint_vel = ", self.keypoint_vel)
         # print("self.keypoint_pos = ", self.keypoint_pos)
         # print("--------------------------------------------------------------------")
-        # obs_tensors = [self.fingertip_midpoint_pos,
-        #             #    self.fingertip_midpoint_quat,
-        #                torch.tensor([[0.0, -0.0, 0.0, -0.0]], device='cuda:0'),
-        #             #    self.fingertip_midpoint_linvel,
-        #                torch.tensor([[0, 0,  0]], device='cuda:0'),
-        #             #    self.fingertip_midpoint_angvel,
-        #                torch.tensor([[0, 0,  0]], device='cuda:0'),
-        #                self.achieved_goal,
-        #                self.desired_goal,
-        #             #    self.keypoint_vel,
-        #                torch.zeros(1, 24, device = 'cuda:0'),
-        #                self.keypoint_pos]
+        obs_tensors = [self.fingertip_midpoint_pos,
+                    #    self.fingertip_midpoint_quat,
+                       torch.tensor([[0.0, -0.0, 0.0, -0.0]], device='cuda:0'),
+                    #    self.fingertip_midpoint_linvel,
+                       torch.tensor([[0, 0,  0]], device='cuda:0'),
+                    #    self.fingertip_midpoint_angvel,
+                       torch.tensor([[0, 0,  0]], device='cuda:0'),
+                       self.achieved_goal,
+                       self.desired_goal,
+                    #    self.keypoint_vel,
+                       torch.zeros(1, 24, device = 'cuda:0'),
+                       self.keypoint_pos]
 
-        obs_tensors = self.obs_tensors_list1[self.count]
+        # obs_tensors = self.obs_tensors_list1[self.count]
         self.step_count += 1
         # if self.count >= len(self.obs_tensors_list):
         #     self.count = 0
