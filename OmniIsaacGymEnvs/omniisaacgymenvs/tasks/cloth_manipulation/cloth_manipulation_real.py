@@ -63,15 +63,11 @@ class ClothManipulationReal():
 
         self.cleanup()
 
-        self.frame_list = []
-        self.frame_list2 = []
-        self.counter = 0
-        self.video_count = 0
-
-        self.y_displacements = []
-        self.z_displacements = []
-
         self.is_first_run = True
+
+        self.rotation_matrix = torch.tensor([[-1, 0, 0],
+                                        [0, -1, 0],
+                                        [0, 0, 1]], device=self.device)
 
         self.keypoint_param_init()
         self.robot_param_init()
@@ -146,12 +142,14 @@ class ClothManipulationReal():
 
 
     def keypoint_param_init(self):
-        self.keypoint_offsets = None
+        self.front_camera_offsets = None
+        self.side_camera_offsets = None
         self.keypoint_pose = torch.zeros(8, 3, device=self.device)
         self.desired_initial_pose = torch.tensor([0.0908,  0.0993,  0.4049], device=self.device)
 
-        self.previous_keypoint_pose = torch.zeros(8, 3, device=self.device)  # 上次使用的关键点坐标
         self.front_keypoint_pose = torch.zeros(4, 3, device=self.device)     # 存储前置相机的关键点数据
+
+        self.previous_keypoint_pose = torch.zeros(8, 3, device=self.device)  # 上次使用的关键点坐标
         self.side_keypoint_pose = torch.zeros(4, 3, device=self.device)      # 存储侧面相机的关键点数据
 
     
@@ -202,7 +200,6 @@ class ClothManipulationReal():
         control_msg.data = control_data.cpu().numpy().tolist()
 
         self.robot_control_publisher.publish(control_msg)
-        print("publish success")
 
 
     def post_physics_step(self):
@@ -264,12 +261,12 @@ class ClothManipulationReal():
         """Compute observations."""
         
         # print("--------------------------------------------------------------------")
-        print("self.current_pose = ", self.current_pose)
+        # print("self.current_pose = ", self.current_pose)
         # print("self.fingertip_midpoint_quat = ", self.fingertip_midpoint_quat)
         # print("self.fingertip_midpoint_linvel = ", self.fingertip_midpoint_linvel)
         # print("self.fingertip_midpoint_angvel = ", self.fingertip_midpoint_angvel)
-        print("self.achieved_goal = ",self.achieved_goal)
-        print("self.desired_goal = ", self.desired_goal)
+        # print("self.achieved_goal = ",self.achieved_goal)
+        # print("self.desired_goal = ", self.desired_goal)
         # print("self.keypoint_vel = ", self.keypoint_vel)
         # print("self.keypoint_pos = ", self.keypoint_pos)
         # print("--------------------------------------------------------------------")
@@ -467,7 +464,9 @@ class ClothManipulationReal():
 
     def pose_callback(self, msg):
         position_data = msg.pose.position
-        position_array = torch.tensor([-position_data.x, -position_data.y, position_data.z], device=self.device).view(1, 3)
+        position_array = torch.tensor([-position_data.x, -position_data.y, position_data.z], device=self.device, dtype=torch.float).view(1, 3)
+        
+        # position_array = torch.mm(position_array, self.rotation_matrix)
 
         if self.robot_end_offsets is None:
             self.robot_end_offsets = self.desired_initial_pose_robot - position_array[0]
@@ -483,16 +482,18 @@ class ClothManipulationReal():
         data = msg.data
         if len(data) == 12:  # 确认数据长度是12，表示4个关键点的x、y、z坐标
         # 将数据转换为形状为 (4, 3) 的 PyTorch 张量
-            keypoint_array = torch.tensor(data, device=self.device).view(4, 3)
+            keypoint_array = torch.tensor(data, device=self.device, dtype=torch.float).view(4, 3)
             keypoint_array[:, 0] = -keypoint_array[:, 0]  # x坐标取反
             keypoint_array[:, 1] = -keypoint_array[:, 1]  # y坐标取反
 
+            # keypoint_array = torch.mm(keypoint_array, self.rotation_matrix)
+
         # 如果offset还未计算，计算offset并存储
-            if self.keypoint_offsets is None:
+            if self.front_camera_offsets is None:
                 if not torch.all(keypoint_array[0] == 0):
                     # 计算keypoint_pose[0]与期望初始坐标之间的偏移量
-                    self.keypoint_offsets = self.desired_initial_pose - keypoint_array[0]
-                    print("Offset calculated: ", self.keypoint_offsets)
+                    self.front_camera_offsets = self.desired_initial_pose - keypoint_array[0]
+                    print("Offset calculated: ", self.front_camera_offsets)
                 else:
                     # 如果第一个点为0，不计算 offset
                     print("First keypoint is 0, unable to calculate offset.")
@@ -501,7 +502,7 @@ class ClothManipulationReal():
 
             for i in range(4):
                 if not torch.all(keypoint_array[i] == 0):  # 只有非 0 点才应用偏移量
-                    keypoint_array[i] += self.keypoint_offsets
+                    keypoint_array[i] += self.front_camera_offsets
 
         self.front_keypoint_pose[:4] = keypoint_array
 
@@ -515,12 +516,12 @@ class ClothManipulationReal():
                     delta_side_x = torch.abs(self.side_keypoint_pose[i][0] - self.previous_keypoint_pose[i][0])  # 侧面相机 x 方向增量
                     delta_side_y = torch.abs(self.side_keypoint_pose[i][1] - self.previous_keypoint_pose[i][1])  # 侧面相机 y 方向增量
 
-                    if delta_side_x > 0.04 and delta_side_y > 0.04:
+                    if delta_side_x > 0.05 and delta_side_y > 0.05:
                         print(f"Side camera keypoint {i} invalid, using previous data.")
                         self.front_keypoint_pose[i] = self.previous_keypoint_pose[i]
                     else:
                         print(f"Using side camera keypoint {i} data.")
-                        self.front_keypoint_pose[i] = self.side_keypoint_pose[i] + self.keypoint_offsets 
+                        self.front_keypoint_pose[i] = self.side_keypoint_pose[i]
 
             elif not torch.all(torch.eq(self.previous_keypoint_pose, 0)): 
                 # delta = torch.abs(self.front_keypoint_pose[i] - self.previous_keypoint_pose[i])
@@ -528,7 +529,7 @@ class ClothManipulationReal():
                 delta_y = torch.abs(self.front_keypoint_pose[i][1] - self.previous_keypoint_pose[i][1])  # y 方向增量
 
 
-                if delta_x > 0.04 and delta_y > 0.04:
+                if delta_x > 0.05 and delta_y > 0.05:
                     print(f"Warning: Keypoint {i} has moved too much in both x and y, delta_x: {delta_x}, delta_y: {delta_y}")
 
                     if not torch.all(self.side_keypoint_pose[i] == 0):
@@ -541,10 +542,14 @@ class ClothManipulationReal():
 
                         else:
                             print(f"Using side camera keypoint {i} data.")
-                            self.front_keypoint_pose[i] = self.side_keypoint_pose[i] + self.keypoint_offsets  # 使用侧面相机的数据
+                            self.front_keypoint_pose[i] = self.side_keypoint_pose[i] # 使用侧面相机的数据
+
+                    else:
+                        self.front_keypoint_pose[i] = self.previous_keypoint_pose[i]  # 使用上一次的坐标
 
             
         self.keypoint_pose = self.front_keypoint_pose
+        print("self.front_keypoint_pose_1 = ", self.front_keypoint_pose)
 
 
         if self.is_first_call_keypoint_callback:
@@ -575,5 +580,25 @@ class ClothManipulationReal():
             keypoint_array[:, 0] = -keypoint_array[:, 0]  # x坐标取反
             keypoint_array[:, 1] = -keypoint_array[:, 1]  # y坐标取反
 
+        # 如果offset还未计算，计算offset并存储
+        if self.side_camera_offsets is None:
+            if not torch.all(keypoint_array[0] == 0):
+                # 计算keypoint_pose[0]与期望初始坐标之间的偏移量
+                self.side_camera_offsets = self.desired_initial_pose - keypoint_array[0]
+                print("side_Offset calculated: ", self.side_camera_offsets)
+            else:
+                # 如果第一个点为0，不计算 offset
+                print("First keypoint is 0, unable to calculate offset.")
+                return
+
+            self.front_camera_offsets = self.desired_initial_pose - keypoint_array[0]
+
             # 存储侧面相机的关键点数据，不应用 offset
             self.side_keypoint_pose[:4] = keypoint_array
+
+            for i in range(4):
+                if not torch.all(self.side_keypoint_pose[i] == 0):
+                    self.front_keypoint_pose[i] = self.side_keypoint_pose[i] + self.side_camera_offsets  # 使用侧面相机的数据
+
+            
+            print("self.side_keypoint_pose_2 = ", keypoint_array)
