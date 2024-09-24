@@ -591,8 +591,6 @@ class ClothManipulationReal():
                 print("First keypoint is 0, unable to calculate offset.")
                 return
 
-            self.front_camera_offsets = self.desired_initial_pose - keypoint_array[0]
-
             # 存储侧面相机的关键点数据，不应用 offset
             self.side_keypoint_pose[:4] = keypoint_array
 
@@ -600,5 +598,4 @@ class ClothManipulationReal():
                 if not torch.all(self.side_keypoint_pose[i] == 0):
                     self.front_keypoint_pose[i] = self.side_keypoint_pose[i] + self.side_camera_offsets  # 使用侧面相机的数据
 
-            
-            print("self.side_keypoint_pose_2 = ", keypoint_array)
+            print("self.side_keypoint_pose_2 = ", self.front_keypoint_pose)
