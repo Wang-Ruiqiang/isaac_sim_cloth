@@ -86,7 +86,7 @@ def Xform "denso_robot" (
 
         def "visuals" (
             instanceable = true
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/base_link.dae@</denso_robot/base_link/visuals>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/base_link.usdc@</denso_robot/base_link/visuals>
         )
         {
             custom bool scene_visualization:drawNormals = 0
@@ -98,7 +98,7 @@ def Xform "denso_robot" (
 
         def "collisions" (
             instanceable = false
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/base_link.dae@</denso_robot/base_link/collisions>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/base_link.usdc@</denso_robot/base_link/collisions>
         )
         {
              over "mesh_0" (
@@ -153,7 +153,7 @@ def Xform "denso_robot" (
 
         def "visuals" (
             instanceable = true
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J1.dae@</denso_robot/link1/visuals>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J1.usdc@</denso_robot/link1/visuals>
         )
         {
             custom bool scene_visualization:drawNormals = 0
@@ -165,7 +165,7 @@ def Xform "denso_robot" (
 
         def "collisions" (
             instanceable = false
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J1.dae@</denso_robot/link1/collisions>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J1.usdc@</denso_robot/link1/collisions>
         )
         {
             over "mesh_0" (
@@ -214,7 +214,7 @@ def Xform "denso_robot" (
 
         def "visuals" (
             instanceable = true
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J2.dae@</denso_robot/link2/visuals>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J2.usdc@</denso_robot/link2/visuals>
         )
         {
             custom bool scene_visualization:drawNormals = 0
@@ -226,7 +226,7 @@ def Xform "denso_robot" (
 
         def "collisions" (
             instanceable = false
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J2.dae@</denso_robot/link2/collisions>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J2.usdc@</denso_robot/link2/collisions>
         )
         {
             over "mesh_0" (
@@ -275,7 +275,7 @@ def Xform "denso_robot" (
 
         def "visuals" (
             instanceable = true
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J3.dae@</denso_robot/link3/visuals>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J3.usdc@</denso_robot/link3/visuals>
         )
         {
             custom bool scene_visualization:drawNormals = 0
@@ -287,7 +287,7 @@ def Xform "denso_robot" (
 
         def "collisions" (
             instanceable = false
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J3.dae@</denso_robot/link3/collisions>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J3.usdc@</denso_robot/link3/collisions>
         )
         {
             over "mesh_0" (
@@ -336,7 +336,7 @@ def Xform "denso_robot" (
 
         def "visuals" (
             instanceable = true
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J4.dae@</denso_robot/link4/visuals>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J4.usdc@</denso_robot/link4/visuals>
         )
         {
             custom bool scene_visualization:drawNormals = 0
@@ -348,7 +348,7 @@ def Xform "denso_robot" (
 
         def "collisions" (
             instanceable = false
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J4.dae@</denso_robot/link4/collisions>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J4.usdc@</denso_robot/link4/collisions>
         )
         {
             over "mesh_0" (
@@ -397,7 +397,7 @@ def Xform "denso_robot" (
 
         def "visuals" (
             instanceable = true
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J5.dae@</denso_robot/link5/visuals>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J5.usdc@</denso_robot/link5/visuals>
         )
         {
             custom bool scene_visualization:drawNormals = 0
@@ -409,7 +409,7 @@ def Xform "denso_robot" (
 
         def "collisions" (
             instanceable = false
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J5.dae@</denso_robot/link5/collisions>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J5.usdc@</denso_robot/link5/collisions>
         )
         {
             over "mesh_0" (
@@ -459,7 +459,7 @@ def Xform "denso_robot" (
 
         def "visuals" (
             instanceable = true
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J6.dae@</denso_robot/link6/visuals>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J6.usdc@</denso_robot/link6/visuals>
         )
         {
             custom bool scene_visualization:drawNormals = 0
@@ -471,7 +471,7 @@ def Xform "denso_robot" (
 
         def "collisions" (
             instanceable = false
-            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/meshes/denso_robot/visual/J6.dae@</denso_robot/link6/collisions>
+            prepend references = @/home/ruiqiang/workspaces/denso_ws/src/denso_robot_ros2/denso_robot_description/usd/J6.usdc@</denso_robot/link6/collisions>
         )
         {
             over "mesh_0" (
