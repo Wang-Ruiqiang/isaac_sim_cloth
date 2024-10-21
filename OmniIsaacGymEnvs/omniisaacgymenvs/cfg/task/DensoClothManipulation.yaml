@@ -4,12 +4,13 @@ defaults:
     - _self_
     # - /factory_schema_config_task
 
-name: ClothManipulationReal
+name: DensoClothManipulation
 physics_engine: ${..physics_engine}
 
 sim:
   use_gpu_pipeline: ${eq:${...pipeline},"gpu"}
   dt: 0.00833333333 # required
+  # dt: 0.005 # required
   gravity: [0.0, 0.0, -9.81]  # required
   disable_gravity: False
   add_ground_plane: True
@@ -89,14 +90,13 @@ randomize:
   fingertip_midpoint_pos_noise: [0.2, 0.2, 0.1]  # noise on hand position
   fingertip_midpoint_rot_initial: [3.1416, 0, 3.1416]  # initial rotation of fingertips (Euler)
   fingertip_midpoint_rot_noise: [0.3, 0.3, 1]  # noise on rotation
-  cloth_pos_xy_initial: [0.0, -0.1]  # initial XY position of nut on table
-  cloth_pos_xy_initial_noise: [0.00001, 0.00001]  # noise on nut position
+  # cloth_pos_xy_initial: [0.0, -0.1]  # initial XY position of nut on table
+  cloth_pos_xy_initial: [0.0, -0.0]  # initial XY position of cloth on table
+  cloth_pos_xy_noise: [0.0, 0.0]  # noise on position
+  # cloth_pos_xy_noise: [-0.05, 0.1]  # noise on position
 
 rl:
-  # pos_action_scale: [0.05, 0.05, 0.05]
-  pos_action_scale: [0.01, 0.01, 0.01]
-  # pos_action_scale: [0.005, 0.006, 0.006]
-  # pos_action_scale: [0.002, 0.0033, 0.0025]
+  pos_action_scale: [0.1, 0.1, 0.1]
   rot_action_scale: [0.1, 0.1, 0.1]
   force_action_scale: [1.0, 1.0, 1.0]
   torque_action_scale: [1.0, 1.0, 1.0]
@@ -110,17 +110,18 @@ rl:
   keypoint_reward_scale: 1.0  # scale on keypoint-based reward
   action_penalty_scale: 0.0  # scale on action penalty
 
-  max_episode_length: 80 # 200 每一次操作的时间
+  max_episode_length: 100 # 200 每一次操作的时间
 
   success_bonus: 0.0  # bonus if nut has been lifted
 
 ctrl:
-  ctrl_type: joint_space_id  # {gym_default,
-                              #  joint_space_ik, joint_space_id, 
-                              #  task_space_impedance, operational_space_motion, 
-                              #  open_loop_force, closed_loop_force,
-                              #  hybrid_force_motion}
-
+  # ctrl_type: joint_space_id  # {gym_default,
+  #                             #  joint_space_ik, joint_space_id, 
+  #                             #  task_space_impedance, operational_space_motion, 
+  #                             #  open_loop_force, closed_loop_force,
+  #                             #  hybrid_force_motion}
+  ctrl_type: gym_default
+  
   all:
     jacobian_type: geometric
     gripper_prop_gains: [50, 50]

@@ -44,16 +44,17 @@ from omni.isaac.core.objects import FixedCuboid
 from omni.isaac.core.utils.prims import get_prim_at_path
 from omni.isaac.core.utils.stage import get_current_stage
 from omniisaacgymenvs.tasks.base.rl_task import RLTask
-from omniisaacgymenvs.robots.articulations.factory_franka import FactoryFranka
+from omniisaacgymenvs.robots.articulations.denso import Denso
 from pxr import PhysxSchema, UsdPhysics
 import omniisaacgymenvs.tasks.factory.factory_control as fc
+import omniisaacgymenvs.tasks.factory.denso_control as dc
 from omniisaacgymenvs.tasks.factory.factory_schema_class_base import FactoryABCBase
 from omniisaacgymenvs.tasks.factory.factory_schema_config_base import (
     FactorySchemaConfigBase,
 )
 
 
-class FactoryBase(RLTask, FactoryABCBase):
+class DensoBase(RLTask, FactoryABCBase):
     def __init__(self, name, sim_config, env) -> None:
         """Initialize instance variables. Initialize RLTask superclass."""
 
@@ -97,22 +98,23 @@ class FactoryBase(RLTask, FactoryABCBase):
         self._stage = get_current_stage()
 
         if add_to_stage:
-            franka_translation = np.array([self.cfg_base.env.franka_depth, 0.0, 0.0])
-            franka_orientation = np.array([0.0, 0.0, 0.0, 1.0])
+            denso_translation = np.array([self.cfg_base.env.franka_depth, 0.0, 0.0])
+            denso_orientation = np.array([0.0, 0.0, 0.0, 1.0])
 
-            franka = FactoryFranka(
-                prim_path=self.default_zero_env_path + "/franka",
-                name="franka",
-                translation=franka_translation,
-                orientation=franka_orientation,
+            denso = Denso(
+                # prim_path=self.default_zero_env_path + "/denso_robot",
+                prim_path=self.default_zero_env_path,
+                name="denso_robot",
+                translation=denso_translation,
+                orientation=denso_orientation,
             )
             self._sim_config.apply_articulation_settings(
-                "franka",
-                get_prim_at_path(franka.prim_path),
-                self._sim_config.parse_actor_config("franka"),
+                "denso_robot",
+                get_prim_at_path(denso.prim_path),
+                self._sim_config.parse_actor_config("denso_robot"),
             )
 
-            for link_prim in franka.prim.GetChildren():
+            for link_prim in denso.prim.GetChildren():
                 if link_prim.HasAPI(PhysxSchema.PhysxRigidBodyAPI):
                     rb = PhysxSchema.PhysxRigidBodyAPI.Get(
                         self._stage, link_prim.GetPrimPath()
@@ -164,7 +166,7 @@ class FactoryBase(RLTask, FactoryABCBase):
     def acquire_base_tensors(self):
         """Acquire tensors."""
 
-        self.num_dofs = 9
+        self.num_dofs = 6
         self.env_pos = self._env_pos
 
         self.dof_pos = torch.zeros((self.num_envs, self.num_dofs), device=self.device)
@@ -172,29 +174,22 @@ class FactoryBase(RLTask, FactoryABCBase):
         self.dof_torque = torch.zeros(
             (self.num_envs, self.num_dofs), device=self.device
         )
-        self.fingertip_contact_wrench = torch.zeros(
-            (self.num_envs, 6), device=self.device
-        )
 
-        self.ctrl_target_fingertip_midpoint_pos = torch.zeros(
-            (self.num_envs, 3), device=self.device
-        )
-        self.ctrl_target_fingertip_midpoint_quat = torch.zeros(
-            (self.num_envs, 4), device=self.device
-        )
         self.ctrl_target_dof_pos = torch.zeros(
             (self.num_envs, self.num_dofs), device=self.device
-        )
-        self.ctrl_target_gripper_dof_pos = torch.zeros(
-            (self.num_envs, 2), device=self.device
-        )
-        self.ctrl_target_fingertip_contact_wrench = torch.zeros(
-            (self.num_envs, 6), device=self.device
         )
 
         self.prev_actions = torch.zeros(
             (self.num_envs, self.num_actions), device=self.device
         )
+
+        self.ctrl_target_end_effector_pos = torch.zeros(
+            (self.num_envs, 3), device=self.device
+        )
+        self.ctrl_target_end_effector_quat = torch.zeros(
+            (self.num_envs, 4), device=self.device
+        )
+
 
     def refresh_base_tensors(self):
         """Refresh tensors."""
@@ -202,89 +197,26 @@ class FactoryBase(RLTask, FactoryABCBase):
         if not self._env._world.is_playing():
             return
 
-        self.dof_pos = self.frankas.get_joint_positions(clone=False)
-        self.dof_vel = self.frankas.get_joint_velocities(clone=False)
+        self.dof_pos = self.denso.get_joint_positions(clone=False)
+        self.dof_vel = self.denso.get_joint_velocities(clone=False)
+
+        #基于世界坐标系的end_effector_pos
+        (
+            self.end_effector_pos,
+            self.end_effector_quat,
+        ) = self.denso._end_effector.get_world_poses(clone=False)
 
         # Jacobian shape: [4, 11, 6, 9] (root has no Jacobian)
-        self.franka_jacobian = self.frankas.get_jacobians()
-        self.franka_mass_matrix = self.frankas.get_mass_matrices(clone=False)
+        self.denso_jacobian = self.denso.get_jacobians()
+        self.denso_mass_matrix = self.denso.get_mass_matrices(clone=False)
 
-        self.arm_dof_pos = self.dof_pos[:, 0:7]
-        self.arm_mass_matrix = self.franka_mass_matrix[
-            :, 0:7, 0:7
+        self.arm_dof_pos = self.dof_pos[:, 0:6]
+        self.arm_mass_matrix = self.denso_mass_matrix[
+            :, 0:6, 0:6
         ]  # for Franka arm (not gripper)
+        self.end_effector_jacobian = self.denso_jacobian[:, 8, 0:6, 0:6]
 
-        self.hand_pos, self.hand_quat = self.frankas._hands.get_world_poses(clone=False)
-        self.hand_pos -= self.env_pos
-        hand_velocities = self.frankas._hands.get_velocities(clone=False)
-        self.hand_linvel = hand_velocities[:, 0:3]
-        self.hand_angvel = hand_velocities[:, 3:6]
 
-        (
-            self.left_finger_pos,
-            self.left_finger_quat,
-        ) = self.frankas._lfingers.get_world_poses(clone=False)
-        self.left_finger_pos -= self.env_pos
-        left_finger_velocities = self.frankas._lfingers.get_velocities(clone=False)
-        self.left_finger_linvel = left_finger_velocities[:, 0:3]
-        self.left_finger_angvel = left_finger_velocities[:, 3:6]
-        self.left_finger_jacobian = self.franka_jacobian[:, 8, 0:6, 0:7]
-        left_finger_forces = self.frankas._lfingers.get_net_contact_forces(clone=False)
-        self.left_finger_force = left_finger_forces[:, 0:3]
-
-        (
-            self.right_finger_pos,
-            self.right_finger_quat,
-        ) = self.frankas._rfingers.get_world_poses(clone=False)
-        self.right_finger_pos -= self.env_pos
-        right_finger_velocities = self.frankas._rfingers.get_velocities(clone=False)
-        self.right_finger_linvel = right_finger_velocities[:, 0:3]
-        self.right_finger_angvel = right_finger_velocities[:, 3:6]
-        self.right_finger_jacobian = self.franka_jacobian[:, 9, 0:6, 0:7]
-        right_finger_forces = self.frankas._rfingers.get_net_contact_forces(clone=False)
-        self.right_finger_force = right_finger_forces[:, 0:3]
-
-        self.gripper_dof_pos = self.dof_pos[:, 7:9]
-
-        (
-            self.fingertip_centered_pos,
-            self.fingertip_centered_quat,
-        ) = self.frankas._fingertip_centered.get_world_poses(clone=False)
-        self.fingertip_centered_pos -= self.env_pos
-        fingertip_centered_velocities = self.frankas._fingertip_centered.get_velocities(
-            clone=False
-        )
-        self.fingertip_centered_linvel = fingertip_centered_velocities[:, 0:3]
-        self.fingertip_centered_angvel = fingertip_centered_velocities[:, 3:6]
-        self.fingertip_centered_jacobian = self.franka_jacobian[:, 10, 0:6, 0:7]
-
-        self.finger_midpoint_pos = (self.left_finger_pos + self.right_finger_pos) / 2
-        self.fingertip_midpoint_pos = fc.translate_along_local_z(
-            pos=self.finger_midpoint_pos,
-            quat=self.hand_quat,
-            offset=self.asset_info_franka_table.franka_finger_length,
-            device=self.device,
-        )
-        self.fingertip_midpoint_quat = self.fingertip_centered_quat  # always equal
-
-        # TODO: Add relative velocity term (see https://dynamicsmotioncontrol487379916.files.wordpress.com/2020/11/21-me258pointmovingrigidbody.pdf)
-        self.fingertip_midpoint_linvel = self.fingertip_centered_linvel + torch.cross(
-            self.fingertip_centered_angvel,
-            (self.fingertip_midpoint_pos - self.fingertip_centered_pos),
-            dim=1,
-        )
-
-        # From sum of angular velocities (https://physics.stackexchange.com/questions/547698/understanding-addition-of-angular-velocity),
-        # angular velocity of midpoint w.r.t. world is equal to sum of
-        # angular velocity of midpoint w.r.t. hand and angular velocity of hand w.r.t. world.
-        # Midpoint is in sliding contact (i.e., linear relative motion) with hand; angular velocity of midpoint w.r.t. hand is zero.
-        # Thus, angular velocity of midpoint w.r.t. world is equal to angular velocity of hand w.r.t. world.
-        self.fingertip_midpoint_angvel = self.fingertip_centered_angvel  # always equal
-
-        self.fingertip_midpoint_jacobian = (
-            self.left_finger_jacobian + self.right_finger_jacobian
-        ) * 0.5
-        
 
     def parse_controller_spec(self, add_to_stage):
         """Parse controller specification into lower-level controller configuration."""
@@ -447,66 +379,46 @@ class FactoryBase(RLTask, FactoryABCBase):
 
         if add_to_stage:
             if self.cfg_ctrl["motor_ctrl_mode"] == "gym":
-                for i in range(7):
+                print("motor_ctrl_mode = gym")
+                joint_prim_base = self._stage.GetPrimAtPath(
+                    self.default_zero_env_path + "/denso_robot/denso_robot/base_link/joint1"
+                )
+                if joint_prim_base.IsValid():
+                    drive_base = UsdPhysics.DriveAPI.Apply(joint_prim_base, "angular")
+                    drive_base.GetStiffnessAttr().Set(self.cfg_ctrl["joint_prop_gains"][0, 0].item() * 100 * np.pi / 180)
+                    drive_base.GetDampingAttr().Set(self.cfg_ctrl["joint_deriv_gains"][0, 0].item() * np.pi / 180)
+                for i in range(1, 6):
                     joint_prim = self._stage.GetPrimAtPath(
-                        self.default_zero_env_path
-                        + f"/franka/panda_link{i}/panda_joint{i+1}"
+                        self.default_zero_env_path + f"/denso_robot/denso_robot/link{i}/joint{i+1}"
                     )
-                    drive = UsdPhysics.DriveAPI.Apply(joint_prim, "angular")
-                    drive.GetStiffnessAttr().Set(
-                        self.cfg_ctrl["joint_prop_gains"][0, i].item() * np.pi / 180
-                    )
-                    drive.GetDampingAttr().Set(
-                        self.cfg_ctrl["joint_deriv_gains"][0, i].item() * np.pi / 180
-                    )
-
-                for i in range(2):
-                    joint_prim = self._stage.GetPrimAtPath(
-                        self.default_zero_env_path
-                        + f"/franka/panda_hand/panda_finger_joint{i+1}"
-                    )
-                    drive = UsdPhysics.DriveAPI.Apply(joint_prim, "linear")
-                    drive.GetStiffnessAttr().Set(
-                        self.cfg_ctrl["gripper_deriv_gains"][0, i].item()
-                    )
-                    drive.GetDampingAttr().Set(
-                        self.cfg_ctrl["gripper_deriv_gains"][0, i].item()
-                    )
+                    if joint_prim.IsValid():
+                        
+                        drive = UsdPhysics.DriveAPI.Apply(joint_prim, "angular")
+                        drive.GetStiffnessAttr().Set(self.cfg_ctrl["joint_prop_gains"][0, i].item() *100* np.pi / 180)
+                        drive.GetDampingAttr().Set(self.cfg_ctrl["joint_deriv_gains"][0, i].item() * np.pi / 180)
 
             elif self.cfg_ctrl["motor_ctrl_mode"] == "manual":
-                for i in range(7):
+                print("motor_ctrl_mode = manual")
+                joint_prim_base = self._stage.GetPrimAtPath(
+                    self.default_zero_env_path + "/denso_robot/denso_robot/base_link/joint1"
+                )
+                if joint_prim_base.IsValid():
+                    joint_prim_base.RemoveAPI(UsdPhysics.DriveAPI, "angular")
+                    drive_base = UsdPhysics.DriveAPI.Apply(joint_prim_base, "None")
+                    drive_base.GetStiffnessAttr().Set(0.0)
+                    drive_base.GetDampingAttr().Set(0.0)
+                for i in range(1, 6):
                     joint_prim = self._stage.GetPrimAtPath(
                         self.default_zero_env_path
-                        + f"/franka/panda_link{i}/panda_joint{i+1}"
+                        + f"/denso_robot/denso_robot/link{i}/joint{i+1}"
                     )
                     joint_prim.RemoveAPI(UsdPhysics.DriveAPI, "angular")
                     drive = UsdPhysics.DriveAPI.Apply(joint_prim, "None")
                     drive.GetStiffnessAttr().Set(0.0)
                     drive.GetDampingAttr().Set(0.0)
 
-                for i in range(2):
-                    joint_prim = self._stage.GetPrimAtPath(
-                        self.default_zero_env_path
-                        + f"/franka/panda_hand/panda_finger_joint{i+1}"
-                    )
-                    joint_prim.RemoveAPI(UsdPhysics.DriveAPI, "linear")
-                    drive = UsdPhysics.DriveAPI.Apply(joint_prim, "None")
-                    drive.GetStiffnessAttr().Set(0.0)
-                    drive.GetDampingAttr().Set(0.0)
-
     def generate_ctrl_signals(self):
         """Get Jacobian. Set Franka DOF position targets or DOF torques."""
-
-        # Get desired Jacobian
-        if self.cfg_ctrl["jacobian_type"] == "geometric":
-            self.fingertip_midpoint_jacobian_tf = self.fingertip_midpoint_jacobian
-        elif self.cfg_ctrl["jacobian_type"] == "analytic":
-            self.fingertip_midpoint_jacobian_tf = fc.get_analytic_jacobian(
-                fingertip_quat=self.fingertip_quat,
-                fingertip_jacobian=self.fingertip_midpoint_jacobian,
-                num_envs=self.num_envs,
-                device=self.device,
-            )
 
         # Set PD joint pos target or joint torque
         if self.cfg_ctrl["motor_ctrl_mode"] == "gym":
@@ -517,19 +429,19 @@ class FactoryBase(RLTask, FactoryABCBase):
     def _set_dof_pos_target(self):
         """Set Franka DOF position target to move fingertips towards target pose."""
 
-        self.ctrl_target_dof_pos = fc.compute_dof_pos_target(
+        self.ctrl_target_dof_pos = dc.compute_dof_pos_target(
             cfg_ctrl=self.cfg_ctrl,
             arm_dof_pos=self.arm_dof_pos,
-            fingertip_midpoint_pos=self.fingertip_midpoint_pos,
-            fingertip_midpoint_quat=self.fingertip_midpoint_quat,
-            jacobian=self.fingertip_midpoint_jacobian_tf,
-            ctrl_target_fingertip_midpoint_pos=self.ctrl_target_fingertip_midpoint_pos,
-            ctrl_target_fingertip_midpoint_quat=self.ctrl_target_fingertip_midpoint_quat,
-            ctrl_target_gripper_dof_pos=self.ctrl_target_gripper_dof_pos,
+            fingertip_midpoint_pos=self.end_effector_pos,
+            fingertip_midpoint_quat=self.end_effector_quat,
+            jacobian=self.end_effector_jacobian,
+            ctrl_target_fingertip_midpoint_pos=self.ctrl_target_end_effector_pos,
+            ctrl_target_fingertip_midpoint_quat=self.ctrl_target_end_effector_quat,
+            # ctrl_target_gripper_dof_pos=self.ctrl_target_gripper_dof_pos,
             device=self.device,
         )
 
-        self.frankas.set_joint_position_targets(positions=self.ctrl_target_dof_pos)
+        self.denso.set_joint_position_targets(positions=self.ctrl_target_dof_pos)
 
     def _set_dof_torque(self):
         """Set Franka DOF torque to move fingertips towards target pose."""
@@ -538,8 +450,8 @@ class FactoryBase(RLTask, FactoryABCBase):
             cfg_ctrl=self.cfg_ctrl,
             dof_pos=self.dof_pos,
             dof_vel=self.dof_vel,
-            fingertip_midpoint_pos=self.fingertip_midpoint_pos,
-            fingertip_midpoint_quat=self.fingertip_midpoint_quat,
+            fingertip_midpoint_pos=self.end_effector_pos,
+            fingertip_midpoint_quat=self.end_effector_quat,
             fingertip_midpoint_linvel=self.fingertip_midpoint_linvel,
             fingertip_midpoint_angvel=self.fingertip_midpoint_angvel,
             left_finger_force=self.left_finger_force,
@@ -553,7 +465,29 @@ class FactoryBase(RLTask, FactoryABCBase):
             device=self.device,
         )
 
-        self.frankas.set_joint_efforts(efforts=self.dof_torque)
+        self.denso.set_joint_efforts(efforts=self.dof_torque)
+
+        # 3. 逆运动学控制逻辑
+    def ik_control(robot, target_position):
+        # 获取当前关节位置和雅可比矩阵
+        joint_positions = robot.get_joint_positions()
+        jacobian = robot.get_jacobian()
+
+        # 设置目标末端位置
+        target_pos_tensor = torch.tensor(target_position, dtype=torch.float32)
+        current_pos = torch.tensor(robot.get_end_effector_position(), dtype=torch.float32)
+        
+        # 计算位置误差
+        error_pos = target_pos_tensor - current_pos
+
+        # 使用伪逆雅可比矩阵计算关节角度变化
+        joint_velocity = torch.matmul(torch.pinverse(jacobian), error_pos)
+
+        # 更新关节位置
+        new_joint_positions = joint_positions + joint_velocity
+        robot.set_joint_positions(new_joint_positions)
+
+
 
     def enable_gravity(self, gravity_mag):
         """Enable gravity."""

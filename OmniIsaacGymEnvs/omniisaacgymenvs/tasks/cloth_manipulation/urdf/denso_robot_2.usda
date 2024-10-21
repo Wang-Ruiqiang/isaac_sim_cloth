@@ -89,7 +89,7 @@ def Xform "World"
         prepend payload = @file:/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot.usd@
     )
     {
-        quatf xformOp:orient = (1, 0, 0, 0)
+        quatf xformOp:orient = (0, 0, 0, 1)
         float3 xformOp:scale = (1, 1, 1)
         double3 xformOp:translate = (0.5, 0, 0)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]

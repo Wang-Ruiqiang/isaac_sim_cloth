@@ -50,7 +50,6 @@ class VecEnvRLGames(VecEnvBase):
 
     def step(self, actions):
 
-        # print("----------------start----------------------")
         if self._task.randomize_actions:
             actions = self._task._dr_randomizer.apply_actions_randomization(
                 actions=actions, reset_buf=self._task.reset_buf
@@ -58,6 +57,7 @@ class VecEnvRLGames(VecEnvBase):
 
         actions = torch.clamp(actions, -self._task.clip_actions, self._task.clip_actions).to(self._task.device)
         self._task.pre_physics_step(actions)
+
 
         if (self.sim_frame_count + self._task.control_frequency_inv) % self._task.rendering_interval == 0:
             for _ in range(self._task.control_frequency_inv - 1):
@@ -69,6 +69,7 @@ class VecEnvRLGames(VecEnvBase):
             for _ in range(self._task.control_frequency_inv):
                 self._world.step(render=False)
                 self.sim_frame_count += 1
+
 
         self._obs, self._rew, self._resets, self._extras = self._task.post_physics_step()
 

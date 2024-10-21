@@ -13,38 +13,36 @@ from typing import Optional
 import numpy as np
 import torch
 from omni.isaac.core.robots.robot import Robot
-from omni.isaac.core.utils.nucleus import get_assets_root_path
 from omni.isaac.core.utils.prims import get_prim_at_path
 from omni.isaac.core.utils.stage import add_reference_to_stage
 from omniisaacgymenvs.tasks.utils.usd_utils import set_drive
-from pxr import PhysxSchema
+
 from omni.usd import get_context
+from pxr import Usd
+from pxr import PhysxSchema
 
 
-class FactoryFranka(Robot):
+class Denso(Robot):
     def __init__(
         self,
         prim_path: str,
-        name: Optional[str] = "franka",
-        usd_path: Optional[str] = None,
+        name: Optional[str] = "denso_robot",
         translation: Optional[torch.tensor] = None,
         orientation: Optional[torch.tensor] = None,
     ) -> None:
         """[summary]"""
 
-        self._usd_path = usd_path
         self._name = name
+
+        print("translation = ", translation)
 
         self._position = torch.tensor([1.0, 0.0, 0.0]) if translation is None else translation
         self._orientation = torch.tensor([0.0, 0.0, 0.0, 1.0]) if orientation is None else orientation
 
-        if self._usd_path is None:
-            assets_root_path = get_assets_root_path()
-            if assets_root_path is None:
-                carb.log_error("Could not find Isaac Sim assets folder")
-            self._usd_path = assets_root_path + "/Isaac/Robots/FactoryFranka/factory_franka.usd"
+        self._usd_path = "/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot_3.usda"
 
         add_reference_to_stage(self._usd_path, prim_path)
+
 
         # 获取当前的 stage
         stage = get_context().get_stage()
@@ -56,6 +54,7 @@ class FactoryFranka(Robot):
         for prim in all_prims:
             print(prim.GetPath())
 
+
         super().__init__(
             prim_path=prim_path,
             name=name,
@@ -65,30 +64,40 @@ class FactoryFranka(Robot):
         )
 
         dof_paths = [
-            "panda_link0/panda_joint1",
-            "panda_link1/panda_joint2",
-            "panda_link2/panda_joint3",
-            "panda_link3/panda_joint4",
-            "panda_link4/panda_joint5",
-            "panda_link5/panda_joint6",
-            "panda_link6/panda_joint7",
-            "panda_hand/panda_finger_joint1",
-            "panda_hand/panda_finger_joint2",
+            "denso_robot/base_link/joint1",
+            "denso_robot/link1/joint2",
+            "denso_robot/link2/joint3",
+            "denso_robot/link3/joint4",
+            "denso_robot/link4/joint5",
+            "denso_robot/link5/joint6",
         ]
 
-        drive_type = ["angular"] * 7 + ["linear"] * 2
-        default_dof_pos = [math.degrees(x) for x in [0.0, -1.0, 0.0, -2.2, 0.0, 2.4, 0.8]] + [0.02, 0.02]
-        stiffness = [40 * np.pi / 180] * 7 + [500] * 2
-        damping = [80 * np.pi / 180] * 7 + [20] * 2
-        max_force = [87, 87, 87, 87, 12, 12, 12, 200, 200]
-        max_velocity = [math.degrees(x) for x in [2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61]] + [0.2, 0.2]
+        drive_type = ["angular"] * 6
+        default_dof_pos = [
+            0.0,    # joint1
+            0.0,    # joint2
+            1.57,   # joint3 (在URDF文件中的初始值)
+            0.0,    # joint4
+            0.0,    # joint5
+            0.0,    # joint6
+        ]
+        stiffness = [100] * 6
+        damping = [1.4] * 6
+        max_force = [87, 87, 87, 87, 87, 50]  # 你可以根据 URDF 文件中的 limit.effort 设置
+        max_velocity = [124.618, 124.618, 149.541, 149.541, 149.541, 200]
+
         print("stiffness = ", stiffness)
         print("damping = ", damping)
         print("max_force = ", max_force)
         print("max_velocity = ", max_velocity)
 
+
+
         for i, dof in enumerate(dof_paths):
-            print("self.prim_path = ", f"{self.prim_path}/{dof}")
+            full_prim_path = f"{self.prim_path}/{dof}"
+            prim = get_prim_at_path(full_prim_path)
+            print(f"Prim at {full_prim_path}: {prim.IsValid()}")
+
             set_drive(
                 prim_path=f"{self.prim_path}/{dof}",
                 drive_type=drive_type[i],
@@ -102,3 +111,5 @@ class FactoryFranka(Robot):
             PhysxSchema.PhysxJointAPI(get_prim_at_path(f"{self.prim_path}/{dof}")).CreateMaxJointVelocityAttr().Set(
                 max_velocity[i]
             )
+        
+        

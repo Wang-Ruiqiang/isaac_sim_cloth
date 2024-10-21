@@ -38,7 +38,7 @@ from pxr import Usd, Gf, UsdGeom, Sdf, UsdShade
 import omni.kit.commands
 from omni.physx.scripts import utils, physicsUtils
 
-class FrankaCloth(FactoryBase, FactoryABCEnv):
+class DensoCloth(DensoBase, FactoryABCEnv):
     def __init__(self, name, sim_config, env, offset=None) -> None:
         self._get_env_yaml_params()
         super().__init__(name, sim_config, env)
@@ -76,21 +76,22 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         # self.chessboard_view_for_calibration()
         # self.import_camera()
         
-        self.frankas = FactoryFrankaView(prim_paths_expr="/World/envs/.*/franka", name="frankas_view")
+        # self.frankas = FactoryFrankaView(prim_paths_expr="/World/envs/.*/franka", name="frankas_view")
 
-        # self.denso = DensoRobotView(prim_paths_expr="/World/envs/.*/denso_robot/root_joint", name="denso_view")
+        self.denso = DensoRobotView(prim_paths_expr="/World/envs/.*/denso_robot/root_joint", name="denso_view")
         # self.cloth = RigidPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view")
         self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
                                    name="cloth_view",
                                    )
         # self.deformableView = DeformablePrimView(prim_paths_expr="/World/envs/.*/deformable_object/deformable", name="deformableView")
         
-        # scene.add(self.denso)
-        scene.add(self.frankas)
-        scene.add(self.frankas._hands)
-        scene.add(self.frankas._lfingers)
-        scene.add(self.frankas._rfingers)
-        scene.add(self.frankas._fingertip_centered)
+        scene.add(self.denso)
+        scene.add(self.denso._end_effector)
+        # scene.add(self.frankas)
+        # scene.add(self.frankas._hands)
+        # scene.add(self.frankas._lfingers)
+        # scene.add(self.frankas._rfingers)
+        # scene.add(self.frankas._fingertip_centered)
         scene.add(self.cloth)
         # scene.add(self.deformableView)
 
@@ -138,48 +139,6 @@ class FrankaCloth(FactoryBase, FactoryABCEnv):
         
         self.garment_heights = torch.tensor(self.garment_heights, device=self._device).unsqueeze(-1)
         self.garment_widths_max = torch.tensor(self.garment_widths_max, device=self._device).unsqueeze(-1)
-
-
-    def import_camera(self):
-        self.camera = Camera(
-            prim_path="/World/camera",
-            frequency=self.fps,
-            resolution=(1600, 900),
-        )
-
-        self.camera2 = Camera(
-            prim_path="/World/camera2",
-            frequency=self.fps,
-            resolution=(1600, 900),
-        )
-       
-        # self.camera.set_world_pose(
-        #     position = np.array([-0.3, -0.1, 0.7]),
-        #     orientation=rot_utils.euler_angles_to_quats(np.array([0, -50, -90]), degrees=True, extrinsic = False),
-        #     camera_axes="usd",
-        # )
-
-        #--------------------双相机位置---------------------------
-        self.camera2.set_world_pose(
-            position = np.array([0.0, -0.6, 0.7]),
-            orientation=rot_utils.euler_angles_to_quats(np.array([60, 0, 0]), degrees=True, extrinsic = False),
-            camera_axes="usd",
-        )
-
-        self.camera.set_world_pose(
-            position = np.array([-0.3, -0.3, 0.6]),
-            orientation=rot_utils.euler_angles_to_quats(np.array([30, -50, -60]), degrees=True, extrinsic = False),
-            camera_axes="usd",
-        )
-        self.camera.initialize()
-        self.camera.set_clipping_range(near_distance = 0.01, far_distance = 1000000)
-        self.camera.set_focal_length(1.2)
-        self.camera.add_motion_vectors_to_frame()
-
-        self.camera2.initialize()
-        self.camera2.set_clipping_range(near_distance = 0.01, far_distance = 1000000)
-        self.camera2.set_focal_length(1.2)
-        self.camera2.add_motion_vectors_to_frame()
 
 
     def import_XFormPrim_View(self, idx):
