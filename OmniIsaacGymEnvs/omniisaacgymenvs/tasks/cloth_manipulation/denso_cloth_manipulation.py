@@ -162,7 +162,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         
         # print("self.end_effector_pos = ", self.end_effector_pos)
         # print("self.end_effector_quat = ", self.end_effector_quat)
-        self.actions[:, 0:7] = torch.tensor([0.1, 0, 0, 0, 0, 0, 0], device=self.device)
+        # self.actions[:, 0:7] = torch.tensor([0.1, 0, 0, 0, 0, 0, 0], device=self.device)
 
         self._apply_actions_as_ctrl_targets_denso(
             actions=self.actions,
@@ -406,6 +406,8 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
 
         self.y_displacements.append(pos_actions[0][1].item())
         self.z_displacements.append(pos_actions[0][2].item())
+
+        self.ctrl_target_end_effector_pos = self.end_effector_pos + pos_actions
             
         # Interpret actions as target rot (axis-angle) displacements
         rot_actions = actions[:, 3:6]
@@ -576,76 +578,6 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
                 keypoint_offset.repeat(self.num_envs, 1)
             )[1]
 
-    def get_observations(self):
-        """Compute observations."""
-        self.achieved_goal = torch.cat((self.particle_cloth_positon[0, 80], self.particle_cloth_positon[0, 72], self.particle_cloth_positon[0, 36],
-                            self.particle_cloth_positon[0, 44], self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 0]), 0)
-        # print("--------------------------------------------------------------------")
-
-        self.achieved_goal = self.achieved_goal.unsqueeze(dim=0)
-        # origin_point = torch.tensor([0.1, -0.12, 0.4])
-        # offset =  torch.rand(1, 3, device='cuda:0') * 0.1
-        # self.fingertip_midpoint_pos = self.fingertip_midpoint_pos + offset
-
-        # self.achieved_goal = self.achieved_goal.view(-1, 3)
-        # self.achieved_goal = self.achieved_goal + offset
-        # self.achieved_goal = self.achieved_goal.view(1, -1)
-
-        # self.desired_goal = self.desired_goal.view(-1, 3)
-        # self.desired_goal = self.desired_goal + offset
-        # self.desired_goal = self.desired_goal.view(1, -1)
-
-        # self.keypoint_pos = self.keypoint_pos.view(-1, 3)
-        # self.keypoint_pos = self.keypoint_pos + offset
-        # self.keypoint_pos = self.keypoint_pos.view(1, -1)
-
-        # print("self.fingertip_midpoint_pos = ", self.fingertip_midpoint_pos)
-        # print("self.fingertip_midpoint_quat = ", self.fingertip_midpoint_quat)
-        # print("self.fingertip_midpoint_linvel = ", self.fingertip_midpoint_linvel)
-        # print("self.fingertip_midpoint_angvel = ", self.fingertip_midpoint_angvel)
-        # print("self.achieved_goal = ",self.achieved_goal)
-        # print("self.desired_goal = ", self.desired_goal)
-        # print("self.keypoint_vel = ", self.keypoint_vel)
-        # print("self.keypoint_pos = ", self.keypoint_pos)
-        # print("--------------------------------------------------------------------")
-        obs_tensors = [self.fingertip_midpoint_pos,
-                    #    self.fingertip_midpoint_quat,
-                       torch.tensor([[0.0, -0.0, 0.0, -0.0]], device='cuda:0'),
-                    #    self.fingertip_midpoint_linvel,
-                       torch.tensor([[0, 0,  0]], device='cuda:0'),
-                    #    self.fingertip_midpoint_angvel,
-                       torch.tensor([[0, 0,  0]], device='cuda:0'),
-                       self.achieved_goal,
-                       self.desired_goal,
-                    #    self.keypoint_vel,
-                       torch.zeros(1, 24, device = 'cuda:0'),
-                       self.keypoint_pos]
-
-        # obs_tensors = self.obs_tensors_list1[self.count]
-        self.step_count += 1
-        # if self.count >= len(self.obs_tensors_list):
-        #     self.count = 0
-        #     self.step_count = 0
-        #     self.progress_buf[:] = self.max_episode_length - 1
-
-
-        # print("step_count = ", self.step_count)
-        # print("obs_tensors = ", obs_tensors)
-        
-        # print("self.constraint_dis = ", self.constraint_dis)
-        self.obs_buf = torch.cat(obs_tensors, dim=-1)  # shape = (num_envs, num_observations)
-
-        observations = {
-            self.frankas.name: {
-                "obs_buf": self.obs_buf
-            }
-        }
-        # observations = {
-        #     self.denso.name: {
-        #         "obs_buf": self.obs_buf
-        #     }
-        # }
-        return observations
 
     def get_observations_denso(self):
         """Compute observations."""
