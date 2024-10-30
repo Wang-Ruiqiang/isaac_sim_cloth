@@ -39,7 +39,7 @@ class Denso(Robot):
         self._position = torch.tensor([1.0, 0.0, 0.0]) if translation is None else translation
         self._orientation = torch.tensor([0.0, 0.0, 0.0, 1.0]) if orientation is None else orientation
 
-        self._usd_path = "/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot_3.usda"
+        self._usd_path = "/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot/denso_robot_with_hand2.usda"
 
         add_reference_to_stage(self._usd_path, prim_path)
 
@@ -70,9 +70,25 @@ class Denso(Robot):
             "denso_robot/link3/joint4",
             "denso_robot/link4/joint5",
             "denso_robot/link5/joint6",
+            "denso_robot/palm_lower/mcp_joint_1",
+            "denso_robot/mcp_link/pip_joint",
+            "denso_robot/pip_link/dip_joint",
+            "denso_robot/dip_link/fingertip_joint",
+            "denso_robot/palm_lower/mcp_joint_2",
+            "denso_robot/mcp_link_2/pip_joint_2",
+            "denso_robot/pip_link_2/dip_joint_2",
+            "denso_robot/dip_link_2/fingertip_joint_2",
+            "denso_robot/palm_lower/mcp_joint_3",
+            "denso_robot/mcp_link_3/pip_joint_3",
+            "denso_robot/pip_link_3/dip_joint_3",
+            "denso_robot/dip_link_3/fingertip_joint_3",
+            "denso_robot/palm_lower/mcp_joint_4",
+            "denso_robot/mcp_link_4/thumb_pip_joint",
+            "denso_robot/thumb_pip_link/thumb_dip_joint",
+            "denso_robot/thumb_dip_link/thumb_fingertip_joint",
         ]
 
-        drive_type = ["angular"] * 6
+        drive_type = ["angular"] * 6 + ["linear"] * 16
         default_dof_pos = [
             0.0,    # joint1
             0.0,    # joint2
@@ -80,16 +96,11 @@ class Denso(Robot):
             0.0,    # joint4
             0.0,    # joint5
             0.0,    # joint6
-        ]
-        stiffness = [100] * 6
-        damping = [1.4] * 6
-        max_force = [87, 87, 87, 87, 87, 50]  # 你可以根据 URDF 文件中的 limit.effort 设置
-        max_velocity = [124.618, 124.618, 149.541, 149.541, 149.541, 200]
-
-        print("stiffness = ", stiffness)
-        print("damping = ", damping)
-        print("max_force = ", max_force)
-        print("max_velocity = ", max_velocity)
+        ] + [0] * 16
+        stiffness = [70] * 6 + [0.8] * 16
+        damping = [10] * 6 + [0.8] * 16
+        max_force = [87, 87, 87, 87, 87, 50] + [0.95] * 16# 你可以根据 URDF 文件中的 limit.effort 设置
+        max_velocity = [124.618, 124.618, 149.541, 149.541, 149.541, 200] + [8.48] * 16
 
 
 

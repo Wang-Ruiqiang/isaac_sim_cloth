@@ -45,12 +45,12 @@ def compute_dof_pos_target(
     jacobian,
     ctrl_target_fingertip_midpoint_pos,
     ctrl_target_fingertip_midpoint_quat,
-    # ctrl_target_gripper_dof_pos,
+    ctrl_target_gripper_dof_pos,
     device,
 ):
     """Compute Franka DOF position target to move fingertips towards target pose."""
 
-    ctrl_target_dof_pos = torch.zeros((cfg_ctrl["num_envs"], 6), device=device)
+    ctrl_target_dof_pos = torch.zeros((cfg_ctrl["num_envs"], 22), device=device)
 
     pos_error, axis_angle_error = get_pose_error(
         fingertip_midpoint_pos=fingertip_midpoint_pos,
@@ -68,9 +68,9 @@ def compute_dof_pos_target(
         jacobian=jacobian,
         device=device,
     )
-
+    
     ctrl_target_dof_pos[:, 0:6] = arm_dof_pos + delta_arm_dof_pos
-    # ctrl_target_dof_pos[:, 7:9] = ctrl_target_gripper_dof_pos  # gripper finger joints
+    ctrl_target_dof_pos[:, 6:22] = ctrl_target_gripper_dof_pos  # gripper finger joints
 
     return ctrl_target_dof_pos
 

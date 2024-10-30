@@ -7,8 +7,8 @@
                 double radius = 5
             }
             dictionary Perspective = {
-                double3 position = (3.277455249231934, 3.2774552492319344, 3.277455290346028)
-                double3 target = (-3.978038476404322e-8, -3.978038298768638e-8, 7.956076686355118e-8)
+                double3 position = (0.364652676552818, 0.23345995567956934, 1.7689798583897571)
+                double3 target = (-0.5311871145910501, -0.1431090340454378, 0.7861303070572762)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -85,22 +85,19 @@ over "Render" (
 
 def Xform "World"
 {
-    def "denso_robot" (
-        prepend payload = @file:/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot.usd@
+    over "denso_robot" (
+        prepend references = @../../../../../../../../denso_ws/src/denso_robot_ros2/denso_robot_description/urdf/denso_robot/denso_robot.usd@
     )
     {
-        quatf xformOp:orient = (0, 0, 0, 1)
-        float3 xformOp:scale = (1, 1, 1)
+        quatd xformOp:orient = (0, 0, 0, 1)
+        double3 xformOp:scale = (1, 1, 1)
         double3 xformOp:translate = (0.5, 0, 0)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
-
-        over "denso_robot"
+        
+        over "root_joint" (
+            prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
+        )
         {
-            over "root_joint" (
-                prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
-            )
-            {
-            }
         }
     }
 }
@@ -128,5 +125,9 @@ def Xform "Environment"
         double3 xformOp:translate = (0, 0, 0)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
     }
+}
+
+def PhysicsScene "physicsScene"
+{
 }
 

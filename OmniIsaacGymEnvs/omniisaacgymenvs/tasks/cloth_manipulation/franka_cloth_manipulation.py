@@ -167,7 +167,6 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         #     ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,   #初始状态夹爪位置
         #     do_scale=True
         # )
-        # return self.denso
 
 
     async def pre_physics_step_async(self, actions) -> None:
@@ -186,11 +185,11 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
             self.device
         )  # shape = (num_envs, num_actions); values = [-1, 1]
 
-        # self._apply_actions_as_ctrl_targets(
-        #     actions=self.actions,
-        #     ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
-        #     do_scale=True,
-        # )
+        self._apply_actions_as_ctrl_targets(
+            actions=self.actions,
+            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
+            do_scale=True,
+        )
 
     def reset_idx(self, env_ids):
         """Reset specified environments."""
@@ -429,7 +428,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         if do_scale:
             pos_actions = pos_actions @ torch.diag(torch.tensor(self.cfg_task.rl.pos_action_scale, device=self.device))
 
-        print("pos_actions =", pos_actions)
+        # print("pos_actions =", pos_actions)
 
         self.y_displacements.append(pos_actions[0][1].item())
         self.z_displacements.append(pos_actions[0][2].item())
@@ -500,7 +499,7 @@ class FrankaClothManipulation(FrankaCloth, FactoryABCTask):
         if do_scale:
             pos_actions = pos_actions @ torch.diag(torch.tensor(self.cfg_task.rl.pos_action_scale, device=self.device))
 
-        print("pos_actions =", pos_actions)
+        # print("pos_actions =", pos_actions)
 
         self.y_displacements.append(pos_actions[0][1].item())
         self.z_displacements.append(pos_actions[0][2].item())

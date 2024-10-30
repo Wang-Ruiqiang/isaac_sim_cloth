@@ -166,7 +166,7 @@ class DensoBase(RLTask, FactoryABCBase):
     def acquire_base_tensors(self):
         """Acquire tensors."""
 
-        self.num_dofs = 6
+        self.num_dofs = 22
         self.env_pos = self._env_pos
 
         self.dof_pos = torch.zeros((self.num_envs, self.num_dofs), device=self.device)
@@ -188,6 +188,10 @@ class DensoBase(RLTask, FactoryABCBase):
         )
         self.ctrl_target_end_effector_quat = torch.zeros(
             (self.num_envs, 4), device=self.device
+        )
+
+        self.ctrl_target_gripper_dof_pos = torch.zeros(
+            (self.num_envs, 16), device=self.device
         )
 
 
@@ -385,8 +389,10 @@ class DensoBase(RLTask, FactoryABCBase):
                 )
                 if joint_prim_base.IsValid():
                     drive_base = UsdPhysics.DriveAPI.Apply(joint_prim_base, "angular")
-                    drive_base.GetStiffnessAttr().Set(self.cfg_ctrl["joint_prop_gains"][0, 0].item() * 100 * np.pi / 180)
-                    drive_base.GetDampingAttr().Set(self.cfg_ctrl["joint_deriv_gains"][0, 0].item() * np.pi / 180)
+                    drive_base.GetStiffnessAttr().Set(70)
+                    drive_base.GetDampingAttr().Set(10)
+                    # drive_base.GetStiffnessAttr().Set(self.cfg_ctrl["joint_prop_gains"][0, 0].item() * 100 * np.pi / 180)
+                    # drive_base.GetDampingAttr().Set(self.cfg_ctrl["joint_deriv_gains"][0, 0].item() * np.pi / 180)
                 for i in range(1, 6):
                     joint_prim = self._stage.GetPrimAtPath(
                         self.default_zero_env_path + f"/denso_robot/denso_robot/link{i}/joint{i+1}"
@@ -437,7 +443,7 @@ class DensoBase(RLTask, FactoryABCBase):
             jacobian=self.end_effector_jacobian,
             ctrl_target_fingertip_midpoint_pos=self.ctrl_target_end_effector_pos,
             ctrl_target_fingertip_midpoint_quat=self.ctrl_target_end_effector_quat,
-            # ctrl_target_gripper_dof_pos=self.ctrl_target_gripper_dof_pos,
+            ctrl_target_gripper_dof_pos=self.ctrl_target_gripper_dof_pos,
             device=self.device,
         )
 

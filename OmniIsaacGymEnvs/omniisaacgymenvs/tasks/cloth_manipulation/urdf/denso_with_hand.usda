@@ -7,8 +7,8 @@
                 double radius = 5
             }
             dictionary Perspective = {
-                double3 position = (3.137559077880097, 3.059443905378885, 4.05526190895973)
-                double3 target = (-0.27986257497403555, -0.3579777474752457, 0.6378403376734059)
+                double3 position = (2.8045420245645225, -4.678056420483443, 4.611716684387101)
+                double3 target = (-0.042613769188734274, 0.10905598438972142, 1.3655855855234638)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -24,11 +24,10 @@
             double agentHeight = 180
             double agentRadius = 20
             bool excludeRigidBodies = 1
-            int ver = 1
+            uint64 ver = 1
             double voxelCeiling = 460
         }
         dictionary omni_layer = {
-            string authoring_layer = "./denso_robot_1.usda"
             dictionary locked = {
             }
             dictionary muteness = {
@@ -70,6 +69,7 @@
             double "rtx:translucency:worldEps" = 0.005
         }
     }
+    defaultPrim = "World"
     endTimeCode = 100
     metersPerUnit = 1
     startTimeCode = 0
@@ -83,22 +83,54 @@ over "Render" (
 {
 }
 
-def "denso_robot" (
-    prepend payload = @./denso_robot.usd@
-)
+def Xform "World"
 {
-    quatf xformOp:orient = (1, 0, 0, 0)
-    float3 xformOp:scale = (1, 1, 1)
-    double3 xformOp:translate = (-1.0139621657406037, -1.0216106861346068, 0)
-    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
-
-    over "denso_robot"
+    def "denso_robot" (
+        prepend references = @./denso_robot/denso_robot_with_hand.usd@
+    )
     {
-        over "world" (
-            active = false
-        )
+        quatf xformOp:orient = (0, 0, 0, 1)
+        float3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0.5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+        
+        over "denso_robot"
         {
+            over "root_joint" (
+                prepend apiSchemas = ["PhysicsArticulationRootAPI", "PhysxArticulationAPI"]
+            )
+            {
+            }
         }
     }
+}
+
+def Xform "Environment"
+{
+    quatd xformOp:orient = (1, 0, 0, 0)
+    double3 xformOp:scale = (1, 1, 1)
+    double3 xformOp:translate = (0.0, 0, 0)
+    uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+
+    def DistantLight "defaultLight" (
+        prepend apiSchemas = ["ShapingAPI"]
+    )
+    {
+        float inputs:angle = 1
+        float inputs:intensity = 3000
+        float inputs:shaping:cone:angle = 180
+        float inputs:shaping:cone:softness
+        float inputs:shaping:focus
+        color3f inputs:shaping:focusTint
+        asset inputs:shaping:ies:file
+        quatd xformOp:orient = (0.6532814824381883, 0.2705980500730985, 0.27059805007309845, 0.6532814824381882)
+        double3 xformOp:scale = (1, 1, 1)
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
+    }
+}
+
+def PhysicsScene "physicsScene"
+{
 }
 

@@ -160,13 +160,14 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         
         # print("self.end_effector_pos = ", self.end_effector_pos)
         # print("self.end_effector_quat = ", self.end_effector_quat)
+        # 测试时设置action初始值
         # self.actions[:, 0:7] = torch.tensor([0.1, 0, 0, 0, 0, 0, 0], device=self.device)
 
-        self._apply_actions_as_ctrl_targets_denso(
-            actions=self.actions,
-            # ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,   #初始状态夹爪位置
-            do_scale=True
-        )
+        # self._apply_actions_as_ctrl_targets_denso(
+        #     actions=self.actions,
+        #     ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,   #初始状态夹爪位置
+        #     do_scale=True
+        # )
 
 
     async def pre_physics_step_async(self, actions) -> None:
@@ -185,13 +186,11 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
             self.device
         )  # shape = (num_envs, num_actions); values = [-1, 1]
 
-        
-
-        self._apply_actions_as_ctrl_targets_denso(
-            actions=self.actions,
-            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
-            do_scale=True,
-        )
+        # self._apply_actions_as_ctrl_targets_denso(
+        #     actions=self.actions,
+        #     ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
+        #     do_scale=True,
+        # )
 
     def reset_idx(self, env_ids):
         """Reset specified environments."""
@@ -221,15 +220,26 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         self.chain = self.create_denso_chain()
         joint_angles = self.compute_inverse_kinematics_denso(self.chain)
         joint_angles = np.array(joint_angles)
-        joint_goal = torch.rand([len(joint_angles), joint_angles[0].rows()], device=self._device)
+        joint_goal = torch.zeros([len(joint_angles), joint_angles[0].rows() + 16], device=self._device)
 
         for i in range(len(joint_angles)) :
             for j in range(joint_angles[0].rows()):
                 joint_goal[i, j] = joint_angles[i][j]
 
+        joint_goal[0, 9] = 1.68
+
+
+        joint_goal[0, 18] = 1
+        joint_goal[0, 19] = 1
+        joint_goal[0, 20] = 0.35
+
+        #大拇指9, 13， 17, 21
+        joint_goal[0, 17] = 0.25
+        joint_goal[0, 21] = 0.25
         self.dof_vel[env_ids] = 0.0  # shape = (num_envs, num_dofs)
         self.ctrl_target_dof_pos[env_ids] = joint_goal
         self.dof_pos[env_ids] = joint_goal
+        # print("joint_goal = ", joint_goal)
 
         self.denso.set_joint_positions(joint_goal, indices=indices)
         self.denso.set_joint_velocities(self.dof_vel[env_ids], indices=indices)
@@ -278,60 +288,6 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         chain = tree.getChain("base_link", "link6")
         return chain
     
-
-    def ctrl_robot_arm(self, chain):
-        fk = PyKDL.ChainFkSolverPos_recursive(chain)
-        minjp = PyKDL.JntArray(6)
-        maxjp = PyKDL.JntArray(6)
-        minjp[0] = -2.9671
-        minjp[1] = -1.7453292519943295
-        minjp[2] = -2.3736477827122884
-        minjp[3] = -4.71238898038469
-        minjp[4] = -2.0943951023931953
-        minjp[5] = -6.283185307179586
-
-        maxjp[0] = 2.9671
-        maxjp[1] = 2.356194490192345
-        maxjp[2] = 2.670353755551324
-        maxjp[3] = 4.71238898038469
-        maxjp[4] = 2.0943951023931953
-        maxjp[5] = 6.283185307179586
-        
-        ikv = PyKDL.ChainIkSolverVel_pinv(chain)
-        ik = PyKDL.ChainIkSolverPos_NR_JL(chain, minjp, maxjp, fk, ikv)
-        result = []
-
-        for i in range(self.target_postition.size(0)):
-            
-            target_x = -self.end_effector_pos[i, 0].item() + 0.50
-            target_y = -self.end_effector_pos[i, 1].item()
-            target_z = self.end_effector_pos[i, 2].item()
-
-
-            print("self.end_effector_pos = ", self.end_effector_pos)
-            
-            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
-                                        PyKDL.Vector(target_x, target_y, target_z))
-
-            print("target_frame = ", target_frame)
-            
-            # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -2.3546),
-            #                             PyKDL.Vector(target_x, target_y, target_z))
-            # 创建起始关节角度
-            initial_joint_angles = PyKDL.JntArray(6)
-            initial_joint_angles_array = self.dof_pos.cpu().numpy().tolist()[0]
-
-            for i in range(6):
-                initial_joint_angles[i] = initial_joint_angles_array[i]
-            single_result = PyKDL.JntArray(chain.getNrOfJoints())
-            # 调用逆运动学求解器
-            retval = ik.CartToJnt(initial_joint_angles, target_frame, single_result)
-            if (retval >= 0):
-                # print('single_result: ',single_result)
-                result.append(single_result)
-            else :
-                print("Error: could not calculate ik kinematics in ctrl_robot_arm:(")
-        return result
     
     def compute_inverse_kinematics_denso(self, chain):
         fk = PyKDL.ChainFkSolverPos_recursive(chain)
@@ -359,18 +315,19 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
             # 创建目标位姿 机械臂坐标系下坐标
             target_x = self.target_postition[i, 0].item() + 0.5
             target_y = self.target_postition[i, 1].item()
-            target_z = self.target_postition[i, 2].item() + 0.097
+            target_z = self.target_postition[i, 2].item() + 0.097 + 0.15
             
             # target_x = -self.target_postition[i, 0].item() + 0.50 - 0.115
             # target_y = -self.target_postition[i, 1].item() - 0.102
             # target_z = self.target_postition[i, 2].item() + 0.097
             
-            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
-                                        PyKDL.Vector(target_x, target_y, target_z))
+            # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
+            #                             PyKDL.Vector(target_x, target_y, target_z))
+            
             
             # print("target_frame = ", target_frame)
-            # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -2.3546),
-            #                             PyKDL.Vector(target_x, target_y, target_z))
+            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -2.3546),
+                                        PyKDL.Vector(target_x, target_y, target_z))
             # print("self.end_effector_pos = ", self.end_effector_pos)
             # print("self.dof_pos = ", self.dof_pos)
 
@@ -392,7 +349,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         return result
 
 
-    def _apply_actions_as_ctrl_targets_denso(self, actions, do_scale):  # 注释掉了ctrl_target_gripper_dof_pos
+    def _apply_actions_as_ctrl_targets_denso(self, actions, ctrl_target_gripper_dof_pos, do_scale):  # 注释掉了ctrl_target_gripper_dof_pos
         """Apply actions from policy as position/rotation targets."""
 
         # Interpret actions as target pos displacements and set pos target
@@ -400,7 +357,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         if do_scale:
             pos_actions = pos_actions @ torch.diag(torch.tensor(self.cfg_task.rl.pos_action_scale, device=self.device))
 
-        print("pos_actions =", pos_actions)
+        # print("pos_actions =", pos_actions)
 
         self.y_displacements.append(pos_actions[0][1].item())
         self.z_displacements.append(pos_actions[0][2].item())
@@ -432,6 +389,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
 
         self.ctrl_target_fingertip_midpoint_quat = torch_utils.quat_mul(rot_actions_quat, self.end_effector_quat)
 
+        self.ctrl_target_gripper_dof_pos = ctrl_target_gripper_dof_pos
         self.generate_ctrl_signals()
 
 
