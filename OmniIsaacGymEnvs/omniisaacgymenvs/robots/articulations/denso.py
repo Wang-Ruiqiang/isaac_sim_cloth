@@ -39,7 +39,7 @@ class Denso(Robot):
         self._position = torch.tensor([1.0, 0.0, 0.0]) if translation is None else translation
         self._orientation = torch.tensor([0.0, 0.0, 0.0, 1.0]) if orientation is None else orientation
 
-        self._usd_path = "/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot/denso_robot_with_hand2.usda"
+        self._usd_path = "/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot/denso_robot_with_hand3.usda"
 
         add_reference_to_stage(self._usd_path, prim_path)
 
@@ -97,8 +97,8 @@ class Denso(Robot):
             0.0,    # joint5
             0.0,    # joint6
         ] + [0] * 16
-        stiffness = [70] * 6 + [0.8] * 16
-        damping = [10] * 6 + [0.8] * 16
+        stiffness = [70] * 6 + [8] * 16
+        damping = [10] * 6 + [8] * 16
         max_force = [87, 87, 87, 87, 87, 50] + [0.95] * 16# 你可以根据 URDF 文件中的 limit.effort 设置
         max_velocity = [124.618, 124.618, 149.541, 149.541, 149.541, 200] + [8.48] * 16
 

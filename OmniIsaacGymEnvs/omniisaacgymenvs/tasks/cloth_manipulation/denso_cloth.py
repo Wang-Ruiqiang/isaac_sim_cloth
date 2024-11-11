@@ -189,7 +189,7 @@ class DensoCloth(DensoBase, FactoryABCEnv):
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
-        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 5).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 15).GetQuat()) #修改cloth的oritation
         # physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
 
         # Define the material

@@ -163,11 +163,11 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         # 测试时设置action初始值
         # self.actions[:, 0:7] = torch.tensor([0.1, 0, 0, 0, 0, 0, 0], device=self.device)
 
-        # self._apply_actions_as_ctrl_targets_denso(
-        #     actions=self.actions,
-        #     ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,   #初始状态夹爪位置
-        #     do_scale=True
-        # )
+        self._apply_actions_as_ctrl_targets_denso(
+            actions=self.actions,
+            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,   #初始状态夹爪位置
+            do_scale=True
+        )
 
 
     async def pre_physics_step_async(self, actions) -> None:
@@ -186,11 +186,11 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
             self.device
         )  # shape = (num_envs, num_actions); values = [-1, 1]
 
-        # self._apply_actions_as_ctrl_targets_denso(
-        #     actions=self.actions,
-        #     ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
-        #     do_scale=True,
-        # )
+        self._apply_actions_as_ctrl_targets_denso(
+            actions=self.actions,
+            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
+            do_scale=True,
+        )
 
     def reset_idx(self, env_ids):
         """Reset specified environments."""
@@ -226,16 +226,26 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
             for j in range(joint_angles[0].rows()):
                 joint_goal[i, j] = joint_angles[i][j]
 
-        joint_goal[0, 9] = 1.68
+        
 
 
-        joint_goal[0, 18] = 1
-        joint_goal[0, 19] = 1
-        joint_goal[0, 20] = 0.35
+        # joint_goal[0, 18] = 1
+        # joint_goal[0, 19] = 1
+        # joint_goal[0, 20] = 0.35
 
+        #食指6,10,14,18
+
+        joint_goal[0, 6] = 0.8
+
+        joint_goal[0, 10] = 0.2
+        joint_goal[0, 14] = 0.6
+        joint_goal[0, 18] = 0.8
         #大拇指9, 13， 17, 21
-        joint_goal[0, 17] = 0.25
-        joint_goal[0, 21] = 0.25
+        joint_goal[0, 9] = 1.68
+        joint_goal[0, 13] = -1.65
+        # joint_goal[0, 9] = 0
+        joint_goal[0, 17] = 0.5
+        joint_goal[0, 21] = 0.5
         self.dof_vel[env_ids] = 0.0  # shape = (num_envs, num_dofs)
         self.ctrl_target_dof_pos[env_ids] = joint_goal
         self.dof_pos[env_ids] = joint_goal
@@ -268,7 +278,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
-        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 5).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 15).GetQuat()) #修改cloth的oritation
         # physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
         # red_color = round(random.uniform(0, 2), 2)
         # green_color = round(random.uniform(0, 2), 2)
@@ -313,20 +323,25 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
 
         for i in range(self.target_postition.size(0)):
             # 创建目标位姿 机械臂坐标系下坐标
-            target_x = self.target_postition[i, 0].item() + 0.5
-            target_y = self.target_postition[i, 1].item()
-            target_z = self.target_postition[i, 2].item() + 0.097 + 0.15
+            # target_x = self.target_postition[i, 0].item() + 0.5
+            # target_y = self.target_postition[i, 1].item()
+            # target_z = self.target_postition[i, 2].item() + 0.097 + 0.15
             
             # target_x = -self.target_postition[i, 0].item() + 0.50 - 0.115
             # target_y = -self.target_postition[i, 1].item() - 0.102
             # target_z = self.target_postition[i, 2].item() + 0.097
+            target_x = -self.target_postition[i, 0].item() + 0.50 - 0.12
+            target_y = -self.target_postition[i, 1].item() - 0.03
+            target_z = self.target_postition[i, 2].item() + 0.16
             
             # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
             #                             PyKDL.Vector(target_x, target_y, target_z))
             
             
             # print("target_frame = ", target_frame)
-            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -2.3546),
+            # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, -2.3546),
+            #                             PyKDL.Vector(target_x, target_y, target_z))
+            target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 1.57),
                                         PyKDL.Vector(target_x, target_y, target_z))
             # print("self.end_effector_pos = ", self.end_effector_pos)
             # print("self.dof_pos = ", self.dof_pos)
@@ -645,7 +660,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         fail_reward = -1
         action_penalty = 0
 
-        constraint_distances = torch.tensor([0.04, 0.02, 0.02, 0.02, 0.02, 0.02], device=self._device)
+        constraint_distances = torch.tensor([0.02, 0.02, 0.02, 0.02, 0.02, 0.02], device=self._device)
         # constraint_distances = torch.tensor([0.015, 0.01, 0.01, 0.01, 0.01, 0.01], device=self._device)
 
         for i, constraint_distance in enumerate(constraint_distances):

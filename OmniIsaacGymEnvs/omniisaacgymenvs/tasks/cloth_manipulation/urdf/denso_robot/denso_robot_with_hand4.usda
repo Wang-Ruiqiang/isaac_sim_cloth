@@ -7,8 +7,8 @@
                 double radius = 5
             }
             dictionary Perspective = {
-                double3 position = (3.608027194211854, 3.608027194211855, 3.6080272274357816)
-                double3 target = (-3.97803838758648e-8, -3.978038165541875e-8, 7.956076908399723e-8)
+                double3 position = (0.8422393505401756, 1.548697040057477, 2.555706722206172)
+                double3 target = (-0.8066416929649479, -0.10018400344764578, 0.906825718056921)
             }
             dictionary Right = {
                 double3 position = (0, -5, 0)
@@ -86,7 +86,7 @@ over "Render" (
 def Xform "World"
 {
     over "denso_robot" (
-        prepend references = @../denso_robot_with_hand/denso_robot3/denso_robot.usd@
+        prepend references = @../denso_robot_with_hand/denso_robot/denso_robot.usd@
     )
     {
         quatd xformOp:orient = (0, 0, 0, 1)

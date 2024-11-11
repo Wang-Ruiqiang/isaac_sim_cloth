@@ -87,7 +87,7 @@ over "Render" (
 def Xform "World"
 {
     def "denso_robot" (
-        prepend payload = @file:/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot/denso_robot_with_hand.usd@
+        prepend payload = @file:/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/denso_robot2/denso_robot_with_hand.usd@
     )
     {
         quatd xformOp:orient = (0, 0, 0, 1)
