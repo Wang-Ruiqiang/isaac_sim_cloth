@@ -165,7 +165,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
 
         self._apply_actions_as_ctrl_targets_denso(
             actions=self.actions,
-            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_min,   #初始状态夹爪位置
+            ctrl_target_gripper_dof_pos=self.asset_info_denso_table.franka_gripper_width_min,   #初始状态夹爪位置
             do_scale=True
         )
 
@@ -188,7 +188,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
 
         self._apply_actions_as_ctrl_targets_denso(
             actions=self.actions,
-            ctrl_target_gripper_dof_pos=self.asset_info_franka_table.franka_gripper_width_max,
+            ctrl_target_gripper_dof_pos=self.asset_info_denso_table.franka_gripper_width_max,
             do_scale=True,
         )
 
@@ -274,7 +274,7 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         # cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1]+ torch.rand(1).item() * 0.1
         self.cloth_pos_offset = cloth_noise_xy[env_ids, 0].item()
 
-        cloth_z_pos = self.cfg_base.env.table_height + 0.001
+        cloth_z_pos = self.cfg_base.env.denso_table_height + 0.001
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
@@ -330,9 +330,10 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
             # target_x = -self.target_postition[i, 0].item() + 0.50 - 0.115
             # target_y = -self.target_postition[i, 1].item() - 0.102
             # target_z = self.target_postition[i, 2].item() + 0.097
-            target_x = -self.target_postition[i, 0].item() + 0.50 - 0.12
+            target_x = -self.target_postition[i, 0].item() + 0.75 - 0.12
             target_y = -self.target_postition[i, 1].item() - 0.03
-            target_z = self.target_postition[i, 2].item() + 0.16
+            target_z = 0.16
+            print("self.target_postition = ", self.target_postition)
             
             # target_frame = PyKDL.Frame(PyKDL.Rotation.RPY(3.1415926, 0, 0.7854),
             #                             PyKDL.Vector(target_x, target_y, target_z))
@@ -556,6 +557,9 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
                             self.particle_cloth_positon[0, 44], self.particle_cloth_positon[0, 8], self.particle_cloth_positon[0, 0]), 0)
 
         self.achieved_goal = self.achieved_goal.unsqueeze(dim=0)
+
+        self.end_effector_pos[0, 2] -= 0.5
+        print("end_effector_pos value:", self.end_effector_pos)
         
         obs_tensors = [self.end_effector_pos,
                     #    self.fingertip_midpoint_quat,

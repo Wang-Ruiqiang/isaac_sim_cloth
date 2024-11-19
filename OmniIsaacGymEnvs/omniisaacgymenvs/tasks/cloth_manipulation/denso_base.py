@@ -30,7 +30,7 @@
 
 Inherits Gym's RLTask class and abstract base class. Inherited by environment classes. Not directly executed.
 
-Configuration defined in FactoryBase.yaml. Asset info defined in factory_asset_info_franka_table.yaml.
+Configuration defined in FactoryBase.yaml. Asset info defined in factory_asset_info_denso_table.yaml.
 """
 
 
@@ -84,9 +84,9 @@ class DensoBase(RLTask, FactoryABCBase):
         self.cfg_base = hydra.compose(config_name=config_path)
         self.cfg_base = self.cfg_base["task"]  # strip superfluous nesting
 
-        asset_info_path = "../tasks/factory/yaml/factory_asset_info_franka_table.yaml"  # relative to Gym's Hydra search path (cfg dir)
-        self.asset_info_franka_table = hydra.compose(config_name=asset_info_path)
-        self.asset_info_franka_table = self.asset_info_franka_table[""][""][""][
+        asset_info_path = "../tasks/factory/yaml/denso_asset_info_denso_table.yaml"  # relative to Gym's Hydra search path (cfg dir)
+        self.asset_info_denso_table = hydra.compose(config_name=asset_info_path)
+        self.asset_info_denso_table = self.asset_info_denso_table[""][""][""][
             "tasks"
         ]["factory"][
             "yaml"
@@ -141,7 +141,7 @@ class DensoBase(RLTask, FactoryABCBase):
                         rb.GetMaxAngularVelocityAttr().Set(64 / math.pi * 180)
 
             table_translation = np.array(
-                [0.0, 0.0, self.cfg_base.env.table_height * 0.5]
+                [0.0, 0.0, self.cfg_base.env.denso_table_height * 0.5]
             )
             table_orientation = np.array([1.0, 0.0, 0.0, 0.0])
 
@@ -152,9 +152,31 @@ class DensoBase(RLTask, FactoryABCBase):
                 orientation=table_orientation,
                 scale=np.array(
                     [
-                        self.asset_info_franka_table.table_depth,
-                        self.asset_info_franka_table.table_width,
-                        self.cfg_base.env.table_height,
+                        self.asset_info_denso_table.table_depth,
+                        self.asset_info_denso_table.table_width,
+                        self.cfg_base.env.denso_table_height,
+                    ]
+                ),
+                size=1.0,
+                color=np.array([0, 0, 0]),
+            )
+
+            base_translation = np.array(
+                [0.85, 0.0, self.cfg_base.env.denso_table_height * 0.5]
+            )
+            base_orientation = np.array([1.0, 0.0, 0.0, 0.0])
+
+
+            robot_base = FixedCuboid(
+                prim_path=self.default_zero_env_path + "/robot_base",
+                name="robot_base",
+                translation=base_translation,
+                orientation=base_orientation,
+                scale=np.array(
+                    [
+                        self.asset_info_denso_table.base_depth,
+                        self.asset_info_denso_table.base_width,
+                        self.cfg_base.env.denso_table_height,
                     ]
                 ),
                 size=1.0,

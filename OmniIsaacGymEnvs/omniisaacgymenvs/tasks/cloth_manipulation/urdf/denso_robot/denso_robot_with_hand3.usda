@@ -91,7 +91,7 @@ def Xform "World"
     {
         quatd xformOp:orient = (0, 0, 0, 1)
         double3 xformOp:scale = (1, 1, 1)
-        double3 xformOp:translate = (0.5, 0, 0)
+        double3 xformOp:translate = (0.75, 0, 0.8)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:orient", "xformOp:scale"]
 
         over "root_joint" (

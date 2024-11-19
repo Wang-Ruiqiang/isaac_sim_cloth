@@ -12,6 +12,7 @@ env:
   env_spacing: 1.5
   franka_depth: 0.5
   table_height: 0.4
+  denso_table_height: 0.8
   franka_friction: 1.0
   table_friction: 0.3
 

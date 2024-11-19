@@ -170,7 +170,7 @@ class DensoCloth(DensoBase, FactoryABCEnv):
         cloth_x_pos = self.cfg_task.randomize.cloth_pos_xy_initial[0]
         cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1]
 
-        cloth_z_pos = self.cfg_base.env.table_height + 0.001
+        cloth_z_pos = self.cfg_base.env.denso_table_height + 0.001
         # garment_position = torch.tensor([cloth_x_pos, cloth_y_pos, cloth_z_pos], device=self._device) 
 
         env_path = f"/World/envs/env_{idx}/garment"
