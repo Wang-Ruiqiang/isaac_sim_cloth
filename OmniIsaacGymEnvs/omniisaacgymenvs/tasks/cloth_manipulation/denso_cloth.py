@@ -23,6 +23,7 @@ from omniisaacgymenvs.robots.articulations.views.denso_view import DensoRobotVie
 from omniisaacgymenvs.robots.articulations.views.factory_franka_view import FactoryFrankaView
 
 from omni.isaac.core.utils.stage import add_reference_to_stage
+from omni.isaac.core.utils.prims import get_prim_at_path
 
 from omni.physx.scripts import physicsUtils, deformableUtils
 from omni.isaac.core.prims import XFormPrim
@@ -71,6 +72,7 @@ class DensoCloth(DensoBase, FactoryABCEnv):
         # self.create_cloth_material()
         RLTask.set_up_scene(self, scene, replicate_physics=False)
         self._import_env_assets(add_to_stage=True)
+
         # self.create_cone()
         # self.add_attachment()
         # self.chessboard_view_for_calibration()
@@ -80,10 +82,10 @@ class DensoCloth(DensoBase, FactoryABCEnv):
 
         self.denso = DensoRobotView(prim_paths_expr="/World/envs/.*/denso_robot/root_joint", name="denso_view")
         # self.cloth = RigidPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view")
-        self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", 
-                                   name="cloth_view",
-                                   )
+        # self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/cloth", name="cloth_view")
         # self.deformableView = DeformablePrimView(prim_paths_expr="/World/envs/.*/deformable_object/deformable", name="deformableView")
+        self.cloth = ClothPrimView(prim_paths_expr = "/World/envs/.*/garment/garment/Plane_Plane_002", name="cloth_view",)
+
         
         scene.add(self.denso)
         scene.add(self.denso._end_effector)
@@ -132,7 +134,8 @@ class DensoCloth(DensoBase, FactoryABCEnv):
             # garment_file = self.asset_info_garment[subassembly][components[0]]['usd_path']
             # add_reference_to_stage(garment_file, f"/World/envs/env_{i}" + "/garment")
             if add_to_stage:
-                self.import_cloth_view(i)
+                # self.import_cloth_view(i)
+                self.import_garmet_view(i)
                 # self.create_cone(i)
             # self.import_XFormPrim_View(i)
             
@@ -256,6 +259,59 @@ class DensoCloth(DensoBase, FactoryABCEnv):
         #     spring_damping=random.uniform(0.1, 0.5),
         #     particle_mass=random.uniform(0.01, 0.05),
         # )
+
+    def import_garmet_view(self, idx):
+        _usd_path = "/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/mesh/garment/garment.usda"
+
+        env_path = f"/World/envs/env_{idx}/garment"
+        env = UsdGeom.Xform.Define(self._stage, env_path)
+        cloth_path = f"/World/envs/env_{idx}" + "/garment/garment/Plane_Plane_002"
+        add_reference_to_stage(_usd_path, env_path)
+
+        self.plane_mesh = get_prim_at_path(env_path)
+        physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
+        physicsUtils.set_or_add_translate_op(self.plane_mesh, (0.0, 0.0, 1.0))
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat())
+
+        particle_system_path = env.GetPrim().GetPath().AppendChild("ParticleSystem")
+        particle_material_path = env.GetPrim().GetPath().AppendChild("particleMaterial")
+        self.particle_material = ParticleMaterial(
+            prim_path=particle_material_path, drag=0.3, lift=0.6, friction=1.2
+        )
+
+        # self.particle_material = ParticleMaterial(
+        #     prim_path=particle_material_path, drag=random.uniform(0.1, 0.6), lift=random.uniform(0.2, 0.7), friction=random.uniform(0.6, 1.2)
+        # )
+
+        particle_system = ParticleSystem(
+            particle_system_enabled = True,
+            prim_path=particle_system_path,
+            simulation_owner=self._env._world.get_physics_context().prim_path,
+            rest_offset=0.005 * 0.99,
+            contact_offset=0.005,
+            solid_rest_offset=0.005 * 0.99,
+            fluid_rest_offset=0.005 * 0.6 * 0.99,
+            particle_contact_offset=0.005,
+            max_neighborhood = 96,
+            solver_position_iteration_count = 16,
+            global_self_collision_enabled = True,
+            non_particle_collision_enabled = True,
+        )
+        self.cloth1 = ClothPrim(
+            prim_path=str(cloth_path),
+            name="clothPrim" + str(idx),
+            particle_system=particle_system,
+            particle_material=self.particle_material,
+            # stretch_stiffness=10000.0,
+            # bend_stiffness=100.0,
+            # shear_stiffness=100.0,
+            # spring_damping=0.2,
+            stretch_stiffness=10000.0,
+            bend_stiffness=100.0,
+            shear_stiffness=100.0,
+            spring_damping=0.2,
+            particle_mass=0.02,
+        )
 
 
     def chessboard_view_for_calibration(self):

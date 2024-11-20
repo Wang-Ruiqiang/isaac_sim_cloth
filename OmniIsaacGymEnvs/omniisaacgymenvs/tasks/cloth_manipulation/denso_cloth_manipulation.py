@@ -163,11 +163,11 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         # 测试时设置action初始值
         # self.actions[:, 0:7] = torch.tensor([0.1, 0, 0, 0, 0, 0, 0], device=self.device)
 
-        self._apply_actions_as_ctrl_targets_denso(
-            actions=self.actions,
-            ctrl_target_gripper_dof_pos=self.asset_info_denso_table.franka_gripper_width_min,   #初始状态夹爪位置
-            do_scale=True
-        )
+        # self._apply_actions_as_ctrl_targets_denso(
+        #     actions=self.actions,
+        #     ctrl_target_gripper_dof_pos=self.asset_info_denso_table.franka_gripper_width_min,   #初始状态夹爪位置
+        #     do_scale=True
+        # )
 
 
     async def pre_physics_step_async(self, actions) -> None:
@@ -186,11 +186,11 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
             self.device
         )  # shape = (num_envs, num_actions); values = [-1, 1]
 
-        self._apply_actions_as_ctrl_targets_denso(
-            actions=self.actions,
-            ctrl_target_gripper_dof_pos=self.asset_info_denso_table.franka_gripper_width_max,
-            do_scale=True,
-        )
+        # self._apply_actions_as_ctrl_targets_denso(
+        #     actions=self.actions,
+        #     ctrl_target_gripper_dof_pos=self.asset_info_denso_table.franka_gripper_width_max,
+        #     do_scale=True,
+        # )
 
     def reset_idx(self, env_ids):
         """Reset specified environments."""
@@ -251,8 +251,8 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         self.dof_pos[env_ids] = joint_goal
         # print("joint_goal = ", joint_goal)
 
-        self.denso.set_joint_positions(joint_goal, indices=indices)
-        self.denso.set_joint_velocities(self.dof_vel[env_ids], indices=indices)
+        # self.denso.set_joint_positions(joint_goal, indices=indices)
+        # self.denso.set_joint_velocities(self.dof_vel[env_ids], indices=indices)
 
 
     
@@ -274,17 +274,17 @@ class DensoClothManipulation(DensoCloth, FactoryABCTask):
         # cloth_y_pos = self.cfg_task.randomize.cloth_pos_xy_initial[1]+ torch.rand(1).item() * 0.1
         self.cloth_pos_offset = cloth_noise_xy[env_ids, 0].item()
 
-        cloth_z_pos = self.cfg_base.env.denso_table_height + 0.001
+        cloth_z_pos = self.cfg_base.env.denso_table_height + 0.2
         init_loc = Gf.Vec3f(cloth_x_pos, cloth_y_pos, cloth_z_pos)
         physicsUtils.setup_transform_as_scale_orient_translate(self.plane_mesh)
         physicsUtils.set_or_add_translate_op(self.plane_mesh, init_loc)
-        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 15).GetQuat()) #修改cloth的oritation
+        physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
         # physicsUtils.set_or_add_orient_op(self.plane_mesh, Gf.Rotation(Gf.Vec3d([1, 0, 0]), 0).GetQuat()) #修改cloth的oritation
         # red_color = round(random.uniform(0, 2), 2)
         # green_color = round(random.uniform(0, 2), 2)
         # blue_color = round(random.uniform(0, 2), 2)
         # self.shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(red_color, green_color, blue_color)) 
-        self.shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(1, 1, 1)) 
+        # self.shader.CreateInput("diffuseColor", Sdf.ValueTypeNames.Color3f).Set(Gf.Vec3f(1, 1, 1)) 
 
     def create_panda_chain(self):
         robot = URDF.from_xml_file("/home/ruiqiang/workspaces/isaac_ws/isaac_sim_cloth/OmniIsaacGymEnvs/omniisaacgymenvs/tasks/cloth_manipulation/urdf/panda.urdf")
